@@ -4,7 +4,80 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Color Changer</title>
+  <script>
+    // Apply a saved light/dark choice before the page draws, to avoid a flash.
+    try {
+      const savedTheme = localStorage.getItem("theme");
+      if (savedTheme === "light" || savedTheme === "dark") {
+        document.documentElement.dataset.theme = savedTheme;
+      }
+    } catch (error) {
+      // Storage can be unavailable (e.g. private browsing); fall back to the system setting.
+    }
+  </script>
   <style>
+    :root {
+      color-scheme: light;
+      --page-bg: #f5f5f5;
+      --text: #222;
+      --muted: #555;
+      --card-bg: rgba(255, 255, 255, 0.85);
+      --card-shadow: rgba(0, 0, 0, 0.1);
+      --surface: #fff;
+      --border: #ddd;
+      --input-border: #ccc;
+      --accent: #3b5bdb;
+      --accent-hover: #2f4ac0;
+      --accent-text: #fff;
+      --accent-soft: rgba(59, 91, 219, 0.08);
+      --focus: #91a7ff;
+      --ok: #2b8a3e;
+      --error: #c92a2a;
+      --chosen-mix: 100%;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        color-scheme: dark;
+        --page-bg: #15161b;
+        --text: #e9eaf0;
+        --muted: #a9adbb;
+        --card-bg: rgba(30, 32, 40, 0.92);
+        --card-shadow: rgba(0, 0, 0, 0.45);
+        --surface: #262935;
+        --border: #3a3e4d;
+        --input-border: #4a4f61;
+        --accent: #5c7cfa;
+        --accent-hover: #748ffc;
+        --accent-text: #fff;
+        --accent-soft: rgba(116, 143, 252, 0.15);
+        --focus: #bac8ff;
+        --ok: #69db7c;
+        --error: #ff8787;
+        --chosen-mix: 30%;
+      }
+    }
+
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --page-bg: #15161b;
+      --text: #e9eaf0;
+      --muted: #a9adbb;
+      --card-bg: rgba(30, 32, 40, 0.92);
+      --card-shadow: rgba(0, 0, 0, 0.45);
+      --surface: #262935;
+      --border: #3a3e4d;
+      --input-border: #4a4f61;
+      --accent: #5c7cfa;
+      --accent-hover: #748ffc;
+      --accent-text: #fff;
+      --accent-soft: rgba(116, 143, 252, 0.15);
+      --focus: #bac8ff;
+      --ok: #69db7c;
+      --error: #ff8787;
+      --chosen-mix: 30%;
+    }
+
     * {
       box-sizing: border-box;
     }
@@ -17,8 +90,10 @@
       justify-content: center;
       padding: 32px 16px;
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      background-color: #f5f5f5;
-      color: #222;
+      background-color: var(--chosen, var(--page-bg));
+      /* In dark mode the chosen pastel is blended toward the dark page color. */
+      background-color: color-mix(in srgb, var(--chosen, var(--page-bg)) var(--chosen-mix), var(--page-bg));
+      color: var(--text);
       transition: background-color 0.4s ease;
     }
 
@@ -27,9 +102,9 @@
       max-width: 560px;
       padding: 32px;
       text-align: center;
-      background: rgba(255, 255, 255, 0.85);
+      background: var(--card-bg);
       border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 20px var(--card-shadow);
     }
 
     h1 {
@@ -50,7 +125,7 @@
     section {
       margin-top: 32px;
       padding-top: 24px;
-      border-top: 1px solid #ddd;
+      border-top: 1px solid var(--border);
       text-align: left;
     }
 
@@ -58,15 +133,15 @@
       padding: 12px 24px;
       font-size: 1rem;
       font-weight: 600;
-      color: #fff;
-      background-color: #3b5bdb;
+      color: var(--accent-text);
+      background-color: var(--accent);
       border: none;
       border-radius: 8px;
       cursor: pointer;
     }
 
     button:hover {
-      background-color: #2f4ac0;
+      background-color: var(--accent-hover);
     }
 
     button:disabled {
@@ -77,19 +152,29 @@
     button.secondary {
       padding: 8px 16px;
       font-size: 0.875rem;
-      color: #3b5bdb;
+      color: var(--accent);
       background-color: transparent;
-      border: 1px solid #3b5bdb;
+      border: 1px solid var(--accent);
     }
 
     button.secondary:hover {
-      background-color: rgba(59, 91, 219, 0.08);
+      background-color: var(--accent-soft);
+    }
+
+    .theme-toggle {
+      display: block;
+      margin: -12px -12px 8px auto;
+    }
+
+    .entry-remove {
+      padding: 2px 10px;
+      font-size: 0.8rem;
     }
 
     button:focus-visible,
     input:focus-visible,
     textarea:focus-visible {
-      outline: 3px solid #91a7ff;
+      outline: 3px solid var(--focus);
       outline-offset: 2px;
     }
 
@@ -110,8 +195,8 @@
       padding: 10px 12px;
       font: inherit;
       color: inherit;
-      background: #fff;
-      border: 1px solid #ccc;
+      background: var(--surface);
+      border: 1px solid var(--input-border);
       border-radius: 8px;
     }
 
@@ -134,7 +219,7 @@
     .status {
       margin: 24px 0 0;
       font-size: 0.875rem;
-      color: #555;
+      color: var(--muted);
       text-align: center;
     }
 
@@ -142,15 +227,15 @@
       min-height: 1.4em;
       margin: 4px 0 0;
       font-size: 0.875rem;
-      color: #555;
+      color: var(--muted);
     }
 
     .ok {
-      color: #2b8a3e;
+      color: var(--ok);
     }
 
     .error {
-      color: #c92a2a;
+      color: var(--error);
     }
 
     .account-row {
@@ -170,7 +255,7 @@
     .hint {
       margin: 8px 0 0;
       font-size: 0.875rem;
-      color: #555;
+      color: var(--muted);
     }
 
     .entries {
@@ -184,8 +269,8 @@
 
     .entries li {
       padding: 12px 14px;
-      background: #fff;
-      border: 1px solid #e5e5e5;
+      background: var(--surface);
+      border: 1px solid var(--border);
       border-radius: 8px;
     }
 
@@ -203,8 +288,14 @@
       overflow-wrap: anywhere;
     }
 
+    .entry-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     .entry-date {
-      color: #666;
+      color: var(--muted);
     }
 
     .entry-message {
@@ -214,6 +305,12 @@
       overflow-wrap: anywhere;
     }
 
+    @media (prefers-reduced-motion: reduce) {
+      body {
+        transition: none;
+      }
+    }
+
     [hidden] {
       display: none !important;
     }
@@ -221,6 +318,7 @@
 </head>
 <body>
   <main>
+    <button id="theme-toggle" class="secondary theme-toggle" type="button" aria-pressed="false">Dark mode</button>
     <h1>Hello, World!</h1>
     <p>
       This is a simple one-page website built with plain HTML, CSS, and
@@ -260,6 +358,7 @@
         <textarea id="guestbook-text" maxlength="500" required></textarea>
         <button id="guestbook-button" type="submit">Sign the guestbook</button>
       </form>
+      <p id="guestbook-hint" class="hint">Sign in before posting if you want to be able to remove your message later.</p>
       <p id="guestbook-message" class="message" role="status"></p>
       <ul id="guestbook-entries" class="entries" aria-live="polite"></ul>
     </section>
@@ -280,6 +379,36 @@
       "#ffadad"
     ];
     let currentIndex = -1;
+
+    // --- Light / dark mode ---
+
+    const themeToggle = document.getElementById("theme-toggle");
+    const systemDark = window.matchMedia("(prefers-color-scheme: dark)");
+
+    function isDark() {
+      const chosen = document.documentElement.dataset.theme;
+      return chosen ? chosen === "dark" : systemDark.matches;
+    }
+
+    function updateThemeToggle() {
+      const dark = isDark();
+      themeToggle.textContent = dark ? "Light mode" : "Dark mode";
+      themeToggle.setAttribute("aria-pressed", String(dark));
+    }
+
+    themeToggle.addEventListener("click", () => {
+      const next = isDark() ? "light" : "dark";
+      document.documentElement.dataset.theme = next;
+      try {
+        localStorage.setItem("theme", next);
+      } catch (error) {
+        // Not saved; the choice still applies until the page is closed.
+      }
+      updateThemeToggle();
+    });
+
+    systemDark.addEventListener("change", updateThemeToggle);
+    updateThemeToggle();
 
     // Supabase project settings. The publishable key is meant to be public;
     // never put the secret (service_role) key in this file.
@@ -303,8 +432,12 @@
       el.className = el.className.replace(/\s*\b(ok|error)\b/g, "") + (state ? " " + state : "");
     }
 
+    function setBackground(color) {
+      document.body.style.setProperty("--chosen", color);
+    }
+
     function applyColor(color) {
-      document.body.style.backgroundColor = color;
+      setBackground(color);
       const index = colors.indexOf(color);
       if (index !== -1) {
         currentIndex = index;
@@ -341,7 +474,7 @@
     document.getElementById("color-button").addEventListener("click", () => {
       currentIndex = (currentIndex + 1) % colors.length;
       const color = colors[currentIndex];
-      document.body.style.backgroundColor = color;
+      setBackground(color);
 
       if (db) {
         recordClick();
@@ -400,6 +533,11 @@
           loadFavoriteColor();
         }
       }
+      guestbookHint.textContent = user
+        ? "You're signed in, so you can remove messages you post."
+        : "Sign in before posting if you want to be able to remove your message later.";
+      // Show or hide the Remove buttons for this visitor.
+      renderEntries(lastEntries);
     }
 
     loginForm.addEventListener("submit", async (event) => {
@@ -433,8 +571,33 @@
     const guestbookButton = document.getElementById("guestbook-button");
     const guestbookMessage = document.getElementById("guestbook-message");
     const guestbookList = document.getElementById("guestbook-entries");
+    const guestbookHint = document.getElementById("guestbook-hint");
+    let lastEntries = null;
+
+    async function removeEntry(entry, button) {
+      if (!window.confirm("Remove your message from the guestbook?")) {
+        return;
+      }
+      button.disabled = true;
+      const { data, error } = await db
+        .from("guestbook_entries")
+        .delete()
+        .eq("id", entry.id)
+        .select("id");
+      if (error || !data || data.length === 0) {
+        button.disabled = false;
+        setMessage(guestbookMessage, failure("Couldn't remove your message.", error), "error");
+        return;
+      }
+      setMessage(guestbookMessage, "Your message was removed.", "ok");
+      loadEntries();
+    }
 
     function renderEntries(entries) {
+      if (!entries) {
+        return;
+      }
+      lastEntries = entries;
       guestbookList.replaceChildren();
       if (entries.length === 0) {
         const empty = document.createElement("li");
@@ -461,7 +624,21 @@
         message.className = "entry-message";
         message.textContent = entry.message;
 
-        header.append(name, date);
+        const meta = document.createElement("span");
+        meta.className = "entry-meta";
+        meta.append(date);
+
+        if (currentUser && entry.user_id === currentUser.id) {
+          const remove = document.createElement("button");
+          remove.type = "button";
+          remove.className = "secondary entry-remove";
+          remove.textContent = "Remove";
+          remove.setAttribute("aria-label", "Remove your message");
+          remove.addEventListener("click", () => removeEntry(entry, remove));
+          meta.append(remove);
+        }
+
+        header.append(name, meta);
         item.append(header, message);
         guestbookList.append(item);
       }
@@ -470,7 +647,7 @@
     async function loadEntries() {
       const { data, error } = await db
         .from("guestbook_entries")
-        .select("name, message, created_at")
+        .select("id, user_id, name, message, created_at")
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) {

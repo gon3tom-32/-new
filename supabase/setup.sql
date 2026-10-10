@@ -57,9 +57,16 @@ create table if not exists public.guestbook_entries (
   created_at timestamptz not null default now()
 );
 
+-- Messages posted while signed in record their author, so the author can
+-- remove them later. Messages posted while signed out have no author.
+alter table public.guestbook_entries
+  add column if not exists user_id uuid default auth.uid()
+  references auth.users (id) on delete set null;
+
 alter table public.guestbook_entries enable row level security;
 
 grant select, insert on public.guestbook_entries to anon, authenticated;
+grant delete on public.guestbook_entries to authenticated;
 
 drop policy if exists "Anyone can read guestbook entries" on public.guestbook_entries;
 create policy "Anyone can read guestbook entries"
@@ -67,11 +74,18 @@ create policy "Anyone can read guestbook entries"
   to anon, authenticated
   using (true);
 
+-- Visitors can't post a message under someone else's account.
 drop policy if exists "Anyone can sign the guestbook" on public.guestbook_entries;
 create policy "Anyone can sign the guestbook"
   on public.guestbook_entries for insert
   to anon, authenticated
-  with check (true);
+  with check (user_id is null or user_id = (select auth.uid()));
+
+drop policy if exists "Users can remove their own guestbook entries" on public.guestbook_entries;
+create policy "Users can remove their own guestbook entries"
+  on public.guestbook_entries for delete
+  to authenticated
+  using ((select auth.uid()) = user_id);
 
 -- ---------------------------------------------------------------------------
 -- 3. Logins: each signed-in visitor's favorite color
