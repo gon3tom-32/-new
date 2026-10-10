@@ -22,19 +22,23 @@ Then visit <http://localhost:8000>.
 
 To change the colors the button cycles through, edit the `colors` array in the `<script>` block at the bottom of `index.html`.
 
+## Dark mode
+
+The page follows the device's light or dark setting. The **Dark mode** / **Light mode** button in the top corner overrides it, and the choice is remembered in that browser. In dark mode the chosen background color is dimmed.
+
 ## Supabase
 
 The page uses a [Supabase](https://supabase.com) project through the `supabase-js` library loaded from a CDN. It has three features:
 
 - **Shared click counter** — every click of the button, by any visitor, adds to a total shown under it.
-- **Guestbook** — visitors leave a name and message; the 50 newest are shown.
+- **Guestbook** — visitors leave a name and message; the 50 newest are shown. Messages posted while signed in can be removed by their author with the **Remove** button. Messages posted while signed out have no author and can only be removed from the Supabase dashboard (**Table Editor → guestbook_entries**).
 - **Logins** — visitors sign in with a link sent to their email. While signed in, the color they pick is saved and restored on their next visit.
 
 A status line at the bottom shows whether the connection to Supabase works.
 
 ### Setup
 
-1. In the Supabase dashboard, open **SQL Editor → New query**, paste the contents of [`supabase/setup.sql`](supabase/setup.sql), and click **Run**. This creates the tables and the access rules. It's safe to run again.
+1. In the Supabase dashboard, open **SQL Editor → New query**, paste the contents of [`supabase/setup.sql`](supabase/setup.sql), and click **Run**. This creates the tables and the access rules. It's safe to run again, and you need to run it again whenever this file changes.
 2. Under **Authentication → URL Configuration**, set **Site URL** to `https://gon3tom-32.github.io/-new/` and add the same address under **Redirect URLs**, so login links bring people back to the site.
 
 The project URL and publishable key are set in the `<script>` block of `index.html` (`SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`). The publishable key is safe to include in the page; Row Level Security policies in `setup.sql` control what visitors can read and write. Never put the secret (`service_role`) key in this repository.
