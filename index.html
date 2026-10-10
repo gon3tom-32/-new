@@ -288,6 +288,10 @@
 
     const SETUP_HINT = " Has supabase/setup.sql been run?";
 
+    function failure(message, error) {
+      return message + SETUP_HINT + (error && error.message ? " (" + error.message + ")" : "");
+    }
+
     const statusEl = document.getElementById("supabase-status");
     const clickTotalEl = document.getElementById("click-total");
 
@@ -318,7 +322,7 @@
     async function loadClickTotal() {
       const { data, error } = await db.from("click_counter").select("total").eq("id", 1).maybeSingle();
       if (error || !data) {
-        setMessage(clickTotalEl, "Couldn't load the click total." + SETUP_HINT, "error");
+        setMessage(clickTotalEl, failure("Couldn't load the click total.", error), "error");
         return;
       }
       showClickTotal(data.total);
@@ -327,7 +331,7 @@
     async function recordClick() {
       const { data, error } = await db.rpc("increment_clicks");
       if (error) {
-        setMessage(clickTotalEl, "Couldn't save your click." + SETUP_HINT, "error");
+        setMessage(clickTotalEl, failure("Couldn't save your click.", error), "error");
         return;
       }
       setMessage(clickTotalEl, "", "");
@@ -363,7 +367,7 @@
         .eq("user_id", currentUser.id)
         .maybeSingle();
       if (error) {
-        setMessage(favoriteMessage, "Couldn't load your favorite color." + SETUP_HINT, "error");
+        setMessage(favoriteMessage, failure("Couldn't load your favorite color.", error), "error");
         return;
       }
       if (data && data.favorite_color) {
@@ -379,7 +383,7 @@
         updated_at: new Date().toISOString()
       });
       if (error) {
-        setMessage(favoriteMessage, "Couldn't save your favorite color." + SETUP_HINT, "error");
+        setMessage(favoriteMessage, failure("Couldn't save your favorite color.", error), "error");
         return;
       }
       setMessage(favoriteMessage, "Saved " + color + " as your favorite color.", "ok");
@@ -470,7 +474,7 @@
         .order("created_at", { ascending: false })
         .limit(50);
       if (error) {
-        setMessage(guestbookMessage, "Couldn't load the guestbook." + SETUP_HINT, "error");
+        setMessage(guestbookMessage, failure("Couldn't load the guestbook.", error), "error");
         return;
       }
       renderEntries(data);
@@ -491,7 +495,7 @@
       const { error } = await db.from("guestbook_entries").insert({ name, message });
       guestbookButton.disabled = false;
       if (error) {
-        setMessage(guestbookMessage, "Couldn't save your message." + SETUP_HINT, "error");
+        setMessage(guestbookMessage, failure("Couldn't save your message.", error), "error");
         return;
       }
       setMessage(guestbookMessage, "Thanks for signing!", "ok");
