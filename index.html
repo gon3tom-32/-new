@@ -15,7 +15,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 16px;
+      padding: 32px 16px;
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
       background-color: #f5f5f5;
       color: #222;
@@ -23,6 +23,7 @@
     }
 
     main {
+      width: 100%;
       max-width: 560px;
       padding: 32px;
       text-align: center;
@@ -36,9 +37,21 @@
       font-size: 2rem;
     }
 
+    h2 {
+      margin: 0 0 12px;
+      font-size: 1.25rem;
+    }
+
     p {
       line-height: 1.6;
       margin-bottom: 24px;
+    }
+
+    section {
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid #ddd;
+      text-align: left;
     }
 
     button {
@@ -56,23 +69,153 @@
       background-color: #2f4ac0;
     }
 
+    button:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    button.secondary {
+      padding: 8px 16px;
+      font-size: 0.875rem;
+      color: #3b5bdb;
+      background-color: transparent;
+      border: 1px solid #3b5bdb;
+    }
+
+    button.secondary:hover {
+      background-color: rgba(59, 91, 219, 0.08);
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    textarea:focus-visible {
+      outline: 3px solid #91a7ff;
+      outline-offset: 2px;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    label {
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    input,
+    textarea {
+      width: 100%;
+      padding: 10px 12px;
+      font: inherit;
+      color: inherit;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    form button {
+      align-self: flex-start;
+      margin-top: 4px;
+    }
+
+    .click-total {
+      margin: 16px 0 0;
+      font-size: 0.95rem;
+      font-variant-numeric: tabular-nums;
+    }
+
     .status {
       margin: 24px 0 0;
       font-size: 0.875rem;
       color: #555;
+      text-align: center;
     }
 
-    .status.ok {
+    .message {
+      min-height: 1.4em;
+      margin: 4px 0 0;
+      font-size: 0.875rem;
+      color: #555;
+    }
+
+    .ok {
       color: #2b8a3e;
     }
 
-    .status.error {
+    .error {
       color: #c92a2a;
     }
 
-    button:focus-visible {
-      outline: 3px solid #91a7ff;
-      outline-offset: 2px;
+    .account-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .account-row p {
+      margin: 0;
+      min-width: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .hint {
+      margin: 8px 0 0;
+      font-size: 0.875rem;
+      color: #555;
+    }
+
+    .entries {
+      list-style: none;
+      margin: 20px 0 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .entries li {
+      padding: 12px 14px;
+      background: #fff;
+      border: 1px solid #e5e5e5;
+      border-radius: 8px;
+    }
+
+    .entry-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 4px 12px;
+      margin-bottom: 4px;
+      font-size: 0.875rem;
+    }
+
+    .entry-name {
+      font-weight: 600;
+      overflow-wrap: anywhere;
+    }
+
+    .entry-date {
+      color: #666;
+    }
+
+    .entry-message {
+      margin: 0;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    [hidden] {
+      display: none !important;
     }
   </style>
 </head>
@@ -84,6 +227,43 @@
       JavaScript. Click the button below to give the page a fresh background color.
     </p>
     <button id="color-button" type="button">Change Background</button>
+    <p id="click-total" class="click-total" aria-live="polite">Loading click total…</p>
+
+    <section aria-labelledby="account-heading">
+      <h2 id="account-heading">Your account</h2>
+
+      <div id="signed-out">
+        <form id="login-form">
+          <label for="login-email">Email</label>
+          <input id="login-email" type="email" autocomplete="email" required placeholder="you@example.com">
+          <button id="login-button" type="submit">Email me a login link</button>
+        </form>
+        <p class="hint">Sign in to have the site remember your favorite color.</p>
+        <p id="login-message" class="message" role="status"></p>
+      </div>
+
+      <div id="signed-in" hidden>
+        <div class="account-row">
+          <p>Signed in as <strong id="user-email"></strong></p>
+          <button id="logout-button" class="secondary" type="button">Sign out</button>
+        </div>
+        <p id="favorite-message" class="hint">Pick a color with the button above and it's saved as your favorite.</p>
+      </div>
+    </section>
+
+    <section aria-labelledby="guestbook-heading">
+      <h2 id="guestbook-heading">Guestbook</h2>
+      <form id="guestbook-form">
+        <label for="guestbook-name">Name</label>
+        <input id="guestbook-name" type="text" maxlength="50" required autocomplete="name">
+        <label for="guestbook-text">Message</label>
+        <textarea id="guestbook-text" maxlength="500" required></textarea>
+        <button id="guestbook-button" type="submit">Sign the guestbook</button>
+      </form>
+      <p id="guestbook-message" class="message" role="status"></p>
+      <ul id="guestbook-entries" class="entries" aria-live="polite"></ul>
+    </section>
+
     <p id="supabase-status" class="status" role="status">Connecting to Supabase…</p>
   </main>
 
@@ -101,28 +281,233 @@
     ];
     let currentIndex = -1;
 
-    document.getElementById("color-button").addEventListener("click", () => {
-      currentIndex = (currentIndex + 1) % colors.length;
-      document.body.style.backgroundColor = colors[currentIndex];
-    });
-
     // Supabase project settings. The publishable key is meant to be public;
     // never put the secret (service_role) key in this file.
     const SUPABASE_URL = "https://gvbhdzyrojokhmwqxpao.supabase.co";
     const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Jle63C7e10oOHsU4ouaPNw_2Tv7txjh";
 
-    const statusEl = document.getElementById("supabase-status");
+    const SETUP_HINT = " Has supabase/setup.sql been run?";
 
-    function showStatus(message, state) {
-      statusEl.textContent = message;
-      statusEl.className = "status " + state;
+    const statusEl = document.getElementById("supabase-status");
+    const clickTotalEl = document.getElementById("click-total");
+
+    let db = null;
+    let currentUser = null;
+
+    function setMessage(el, message, state) {
+      el.textContent = message;
+      el.className = el.className.replace(/\s*\b(ok|error)\b/g, "") + (state ? " " + state : "");
     }
 
+    function applyColor(color) {
+      document.body.style.backgroundColor = color;
+      const index = colors.indexOf(color);
+      if (index !== -1) {
+        currentIndex = index;
+      }
+    }
+
+    // --- Color button and shared click counter ---
+
+    function showClickTotal(total) {
+      const formatted = Number(total).toLocaleString();
+      clickTotalEl.textContent = "This button has been clicked " + formatted +
+        (Number(total) === 1 ? " time" : " times") + " by all visitors.";
+    }
+
+    async function loadClickTotal() {
+      const { data, error } = await db.from("click_counter").select("total").eq("id", 1).maybeSingle();
+      if (error || !data) {
+        setMessage(clickTotalEl, "Couldn't load the click total." + SETUP_HINT, "error");
+        return;
+      }
+      showClickTotal(data.total);
+    }
+
+    async function recordClick() {
+      const { data, error } = await db.rpc("increment_clicks");
+      if (error) {
+        setMessage(clickTotalEl, "Couldn't save your click." + SETUP_HINT, "error");
+        return;
+      }
+      setMessage(clickTotalEl, "", "");
+      showClickTotal(data);
+    }
+
+    document.getElementById("color-button").addEventListener("click", () => {
+      currentIndex = (currentIndex + 1) % colors.length;
+      const color = colors[currentIndex];
+      document.body.style.backgroundColor = color;
+
+      if (db) {
+        recordClick();
+        if (currentUser) {
+          saveFavoriteColor(color);
+        }
+      }
+    });
+
+    // --- Logins and favorite color ---
+
+    const signedOutEl = document.getElementById("signed-out");
+    const signedInEl = document.getElementById("signed-in");
+    const loginForm = document.getElementById("login-form");
+    const loginButton = document.getElementById("login-button");
+    const loginMessage = document.getElementById("login-message");
+    const favoriteMessage = document.getElementById("favorite-message");
+
+    async function loadFavoriteColor() {
+      const { data, error } = await db
+        .from("profiles")
+        .select("favorite_color")
+        .eq("user_id", currentUser.id)
+        .maybeSingle();
+      if (error) {
+        setMessage(favoriteMessage, "Couldn't load your favorite color." + SETUP_HINT, "error");
+        return;
+      }
+      if (data && data.favorite_color) {
+        applyColor(data.favorite_color);
+        setMessage(favoriteMessage, "Welcome back! Your favorite color has been restored.", "");
+      }
+    }
+
+    async function saveFavoriteColor(color) {
+      const { error } = await db.from("profiles").upsert({
+        user_id: currentUser.id,
+        favorite_color: color,
+        updated_at: new Date().toISOString()
+      });
+      if (error) {
+        setMessage(favoriteMessage, "Couldn't save your favorite color." + SETUP_HINT, "error");
+        return;
+      }
+      setMessage(favoriteMessage, "Saved " + color + " as your favorite color.", "ok");
+    }
+
+    function showUser(user) {
+      const previousId = currentUser && currentUser.id;
+      currentUser = user;
+      signedOutEl.hidden = Boolean(user);
+      signedInEl.hidden = !user;
+      if (user) {
+        document.getElementById("user-email").textContent = user.email;
+        if (user.id !== previousId) {
+          loadFavoriteColor();
+        }
+      }
+    }
+
+    loginForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!db) {
+        return;
+      }
+      const email = document.getElementById("login-email").value.trim();
+      loginButton.disabled = true;
+      setMessage(loginMessage, "Sending…", "");
+      const { error } = await db.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: window.location.origin + window.location.pathname }
+      });
+      loginButton.disabled = false;
+      if (error) {
+        setMessage(loginMessage, "Couldn't send the login link: " + error.message, "error");
+        return;
+      }
+      setMessage(loginMessage, "Check your email for a login link.", "ok");
+      loginForm.reset();
+    });
+
+    document.getElementById("logout-button").addEventListener("click", async () => {
+      await db.auth.signOut();
+    });
+
+    // --- Guestbook ---
+
+    const guestbookForm = document.getElementById("guestbook-form");
+    const guestbookButton = document.getElementById("guestbook-button");
+    const guestbookMessage = document.getElementById("guestbook-message");
+    const guestbookList = document.getElementById("guestbook-entries");
+
+    function renderEntries(entries) {
+      guestbookList.replaceChildren();
+      if (entries.length === 0) {
+        const empty = document.createElement("li");
+        empty.textContent = "No messages yet. Be the first to sign!";
+        guestbookList.append(empty);
+        return;
+      }
+      for (const entry of entries) {
+        const item = document.createElement("li");
+
+        const header = document.createElement("div");
+        header.className = "entry-header";
+
+        const name = document.createElement("span");
+        name.className = "entry-name";
+        name.textContent = entry.name;
+
+        const date = document.createElement("time");
+        date.className = "entry-date";
+        date.dateTime = entry.created_at;
+        date.textContent = new Date(entry.created_at).toLocaleString();
+
+        const message = document.createElement("p");
+        message.className = "entry-message";
+        message.textContent = entry.message;
+
+        header.append(name, date);
+        item.append(header, message);
+        guestbookList.append(item);
+      }
+    }
+
+    async function loadEntries() {
+      const { data, error } = await db
+        .from("guestbook_entries")
+        .select("name, message, created_at")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (error) {
+        setMessage(guestbookMessage, "Couldn't load the guestbook." + SETUP_HINT, "error");
+        return;
+      }
+      renderEntries(data);
+    }
+
+    guestbookForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!db) {
+        return;
+      }
+      const name = document.getElementById("guestbook-name").value.trim();
+      const message = document.getElementById("guestbook-text").value.trim();
+      if (!name || !message) {
+        setMessage(guestbookMessage, "Please enter both a name and a message.", "error");
+        return;
+      }
+      guestbookButton.disabled = true;
+      const { error } = await db.from("guestbook_entries").insert({ name, message });
+      guestbookButton.disabled = false;
+      if (error) {
+        setMessage(guestbookMessage, "Couldn't save your message." + SETUP_HINT, "error");
+        return;
+      }
+      setMessage(guestbookMessage, "Thanks for signing!", "ok");
+      document.getElementById("guestbook-text").value = "";
+      loadEntries();
+    });
+
+    // --- Start up ---
+
     if (!window.supabase) {
-      showStatus("Could not load the Supabase library.", "error");
+      setMessage(statusEl, "Could not load the Supabase library.", "error");
+      setMessage(clickTotalEl, "", "");
     } else {
-      // Shared client for future database and login features.
-      window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+      db = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+      // Shared client for future features.
+      window.supabaseClient = db;
 
       // Check that the project is reachable and accepts the key.
       fetch(SUPABASE_URL + "/auth/v1/health", {
@@ -130,14 +515,22 @@
       })
         .then((response) => {
           if (response.ok) {
-            showStatus("Connected to Supabase.", "ok");
+            setMessage(statusEl, "Connected to Supabase.", "ok");
           } else {
-            showStatus("Supabase rejected the request (HTTP " + response.status + ").", "error");
+            setMessage(statusEl, "Supabase rejected the request (HTTP " + response.status + ").", "error");
           }
         })
         .catch(() => {
-          showStatus("Could not reach Supabase.", "error");
+          setMessage(statusEl, "Could not reach Supabase.", "error");
         });
+
+      db.auth.onAuthStateChange((_event, session) => {
+        // Defer so Supabase calls made in response don't run inside the auth callback.
+        setTimeout(() => showUser(session ? session.user : null), 0);
+      });
+
+      loadClickTotal();
+      loadEntries();
     }
   </script>
 </body>
