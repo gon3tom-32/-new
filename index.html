@@ -56,6 +56,20 @@
       background-color: #2f4ac0;
     }
 
+    .status {
+      margin: 24px 0 0;
+      font-size: 0.875rem;
+      color: #555;
+    }
+
+    .status.ok {
+      color: #2b8a3e;
+    }
+
+    .status.error {
+      color: #c92a2a;
+    }
+
     button:focus-visible {
       outline: 3px solid #91a7ff;
       outline-offset: 2px;
@@ -70,8 +84,10 @@
       JavaScript. Click the button below to give the page a fresh background color.
     </p>
     <button id="color-button" type="button">Change Background</button>
+    <p id="supabase-status" class="status" role="status">Connecting to Supabase…</p>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
   <script>
     const colors = [
       "#ffd6a5",
@@ -89,6 +105,40 @@
       currentIndex = (currentIndex + 1) % colors.length;
       document.body.style.backgroundColor = colors[currentIndex];
     });
+
+    // Supabase project settings. The publishable key is meant to be public;
+    // never put the secret (service_role) key in this file.
+    const SUPABASE_URL = "https://gvbhdzyrojokhmwqxpao.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Jle63C7e10oOHsU4ouaPNw_2Tv7txjh";
+
+    const statusEl = document.getElementById("supabase-status");
+
+    function showStatus(message, state) {
+      statusEl.textContent = message;
+      statusEl.className = "status " + state;
+    }
+
+    if (!window.supabase) {
+      showStatus("Could not load the Supabase library.", "error");
+    } else {
+      // Shared client for future database and login features.
+      window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+      // Check that the project is reachable and accepts the key.
+      fetch(SUPABASE_URL + "/auth/v1/health", {
+        headers: { apikey: SUPABASE_PUBLISHABLE_KEY }
+      })
+        .then((response) => {
+          if (response.ok) {
+            showStatus("Connected to Supabase.", "ok");
+          } else {
+            showStatus("Supabase rejected the request (HTTP " + response.status + ").", "error");
+          }
+        })
+        .catch(() => {
+          showStatus("Could not reach Supabase.", "error");
+        });
+    }
   </script>
 </body>
 </html>
