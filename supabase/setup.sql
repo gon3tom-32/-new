@@ -1,6 +1,9 @@
 -- Database setup for the Color Changer site.
 -- Run this once in the Supabase dashboard: SQL Editor → New query → paste → Run.
 -- It is safe to run again; existing data is kept.
+--
+-- The grants below give the website (the anon and authenticated roles) access
+-- to these tables. The policies then limit which rows each visitor can use.
 
 -- ---------------------------------------------------------------------------
 -- 1. Shared click counter
@@ -16,6 +19,9 @@ values (1, 0)
 on conflict (id) do nothing;
 
 alter table public.click_counter enable row level security;
+
+grant usage on schema public to anon, authenticated;
+grant select on public.click_counter to anon, authenticated;
 
 drop policy if exists "Anyone can read the click total" on public.click_counter;
 create policy "Anyone can read the click total"
@@ -53,6 +59,8 @@ create table if not exists public.guestbook_entries (
 
 alter table public.guestbook_entries enable row level security;
 
+grant select, insert on public.guestbook_entries to anon, authenticated;
+
 drop policy if exists "Anyone can read guestbook entries" on public.guestbook_entries;
 create policy "Anyone can read guestbook entries"
   on public.guestbook_entries for select
@@ -76,6 +84,8 @@ create table if not exists public.profiles (
 );
 
 alter table public.profiles enable row level security;
+
+grant select, insert, update on public.profiles to authenticated;
 
 drop policy if exists "Users can read their own profile" on public.profiles;
 create policy "Users can read their own profile"
