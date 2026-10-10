@@ -24,8 +24,19 @@ To change the colors the button cycles through, edit the `colors` array in the `
 
 ## Supabase
 
-The page connects to a [Supabase](https://supabase.com) project using the `supabase-js` library loaded from a CDN. A status line under the button shows whether the connection works.
+The page uses a [Supabase](https://supabase.com) project through the `supabase-js` library loaded from a CDN. It has three features:
 
-The project URL and publishable key are set near the bottom of `index.html` (`SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`). The publishable key is safe to include in the page; protect your data with Row Level Security policies. Never put the secret (`service_role`) key in this repository.
+- **Shared click counter** — every click of the button, by any visitor, adds to a total shown under it.
+- **Guestbook** — visitors leave a name and message; the 50 newest are shown.
+- **Logins** — visitors sign in with a link sent to their email. While signed in, the color they pick is saved and restored on their next visit.
 
-The client is available in the page's script as `window.supabaseClient` for future features.
+A status line at the bottom shows whether the connection to Supabase works.
+
+### Setup
+
+1. In the Supabase dashboard, open **SQL Editor → New query**, paste the contents of [`supabase/setup.sql`](supabase/setup.sql), and click **Run**. This creates the tables and the access rules. It's safe to run again.
+2. Under **Authentication → URL Configuration**, set **Site URL** to `https://gon3tom-32.github.io/-new/` and add the same address under **Redirect URLs**, so login links bring people back to the site.
+
+The project URL and publishable key are set in the `<script>` block of `index.html` (`SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`). The publishable key is safe to include in the page; Row Level Security policies in `setup.sql` control what visitors can read and write. Never put the secret (`service_role`) key in this repository.
+
+Supabase's built-in email service only sends a few login emails per hour. For real traffic, set up your own email provider under **Authentication → Emails → SMTP Settings**.
