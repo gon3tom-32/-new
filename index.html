@@ -324,6 +324,67 @@
       overflow-wrap: anywhere;
     }
 
+    input[type="file"] {
+      padding: 8px;
+    }
+
+    .photo-grid {
+      list-style: none;
+      margin: 20px 0 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 12px;
+    }
+
+    .photo-grid li {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    .photo-grid li.empty {
+      grid-column: 1 / -1;
+      padding: 12px 14px;
+    }
+
+    .photo-grid a {
+      display: block;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .photo-grid img {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      background: var(--border);
+    }
+
+    .photo-caption {
+      margin: 0;
+      font-size: 0.875rem;
+      line-height: 1.4;
+      overflow-wrap: anywhere;
+    }
+
+    .photo-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
     @media (prefers-reduced-motion: reduce) {
       body {
         transition: none;
@@ -380,6 +441,20 @@
       <p id="guestbook-hint" class="hint">Sign in before posting if you want to be able to remove your message later.</p>
       <p id="guestbook-message" class="message" role="status"></p>
       <ul id="guestbook-entries" class="entries" aria-live="polite"></ul>
+    </section>
+
+    <section aria-labelledby="photos-heading">
+      <h2 id="photos-heading">Photo wall</h2>
+      <form id="photo-form" hidden>
+        <label for="photo-file">Photo</label>
+        <input id="photo-file" type="file" accept="image/*" required>
+        <label for="photo-caption">Caption (optional)</label>
+        <input id="photo-caption" type="text" maxlength="100">
+        <button id="photo-button" type="submit">Add to the wall</button>
+      </form>
+      <p id="photo-hint" class="hint">Sign in to add photos to the wall.</p>
+      <p id="photo-message" class="message" role="status"></p>
+      <ul id="photo-grid" class="photo-grid" aria-live="polite"></ul>
     </section>
 
     <p id="supabase-status" class="status" role="status">Connecting to Supabase…</p>
@@ -563,8 +638,13 @@
       guestbookHint.textContent = user
         ? "You're signed in, so you can remove messages you post."
         : "Sign in before posting if you want to be able to remove your message later.";
+      photoForm.hidden = !user;
+      photoHint.textContent = user
+        ? "Photos are resized before uploading, and location data is removed. You can remove photos you add."
+        : "Sign in to add photos to the wall.";
       // Show or hide the Remove buttons for this visitor.
       renderEntries(lastEntries);
+      renderPhotos(lastPhotos);
     }
 
     loginForm.addEventListener("submit", async (event) => {
@@ -707,11 +787,210 @@
       loadEntries();
     });
 
+    // --- Photo wall ---
+
+    const PHOTO_BUCKET = "photos";
+    const MAX_PHOTO_SIDE = 1600;
+    const MAX_ORIGINAL_BYTES = 25 * 1024 * 1024;
+
+    const photoForm = document.getElementById("photo-form");
+    const photoFile = document.getElementById("photo-file");
+    const photoCaption = document.getElementById("photo-caption");
+    const photoButton = document.getElementById("photo-button");
+    const photoHint = document.getElementById("photo-hint");
+    const photoMessage = document.getElementById("photo-message");
+    const photoGrid = document.getElementById("photo-grid");
+    let lastPhotos = null;
+
+    // Redraw the photo at a web-friendly size as a JPEG. Redrawing also drops
+    // the original file's metadata, such as where the photo was taken.
+    function resizePhoto(file) {
+      return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          const scale = Math.min(1, MAX_PHOTO_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.round(img.naturalWidth * scale);
+          canvas.height = Math.round(img.naturalHeight * scale);
+          canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob(
+            (blob) => (blob ? resolve(blob) : reject(new Error("Couldn't process the photo."))),
+            "image/jpeg",
+            0.85
+          );
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          reject(new Error("That file couldn't be opened as an image."));
+        };
+        img.src = url;
+      });
+    }
+
+    function photoUrl(path) {
+      return db.storage.from(PHOTO_BUCKET).getPublicUrl(path).data.publicUrl;
+    }
+
+    async function removePhoto(photo, button) {
+      if (!window.confirm("Remove your photo from the wall?")) {
+        return;
+      }
+      button.disabled = true;
+      const { data, error } = await db
+        .from("photos")
+        .delete()
+        .eq("id", photo.id)
+        .select("id");
+      if (error || !data || data.length === 0) {
+        button.disabled = false;
+        setMessage(photoMessage, failure("Couldn't remove your photo.", error), "error");
+        return;
+      }
+      // The listing is gone; now delete the file itself.
+      await db.storage.from(PHOTO_BUCKET).remove([photo.path]);
+      setMessage(photoMessage, "Your photo was removed.", "ok");
+      loadPhotos();
+    }
+
+    function renderPhotos(photos) {
+      if (!photos || !db) {
+        return;
+      }
+      lastPhotos = photos;
+      photoGrid.replaceChildren();
+      if (photos.length === 0) {
+        const empty = document.createElement("li");
+        empty.className = "empty";
+        empty.textContent = "No photos yet.";
+        photoGrid.append(empty);
+        return;
+      }
+      for (const photo of photos) {
+        const item = document.createElement("li");
+        const url = photoUrl(photo.path);
+        const posted = new Date(photo.created_at);
+
+        const link = document.createElement("a");
+        link.href = url;
+        link.target = "_blank";
+        link.rel = "noopener";
+
+        const img = document.createElement("img");
+        img.src = url;
+        img.loading = "lazy";
+        img.alt = photo.caption || "Photo added " + posted.toLocaleDateString();
+        link.append(img);
+        item.append(link);
+
+        if (photo.caption) {
+          const caption = document.createElement("p");
+          caption.className = "photo-caption";
+          caption.textContent = photo.caption;
+          item.append(caption);
+        }
+
+        const meta = document.createElement("div");
+        meta.className = "photo-meta";
+        const date = document.createElement("time");
+        date.dateTime = photo.created_at;
+        date.textContent = posted.toLocaleDateString();
+        meta.append(date);
+
+        if (currentUser && photo.user_id === currentUser.id) {
+          const remove = document.createElement("button");
+          remove.type = "button";
+          remove.className = "secondary entry-remove";
+          remove.textContent = "Remove";
+          remove.setAttribute("aria-label", "Remove your photo");
+          remove.addEventListener("click", () => removePhoto(photo, remove));
+          meta.append(remove);
+        }
+
+        item.append(meta);
+        photoGrid.append(item);
+      }
+    }
+
+    async function loadPhotos() {
+      const { data, error } = await db
+        .from("photos")
+        .select("id, user_id, path, caption, created_at")
+        .order("created_at", { ascending: false })
+        .limit(60);
+      if (error) {
+        setMessage(photoMessage, failure("Couldn't load the photo wall.", error), "error");
+        return;
+      }
+      renderPhotos(data);
+    }
+
+    photoForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!db || !currentUser) {
+        return;
+      }
+      const file = photoFile.files[0];
+      if (!file) {
+        setMessage(photoMessage, "Choose a photo first.", "error");
+        return;
+      }
+      if (!file.type.startsWith("image/")) {
+        setMessage(photoMessage, "That file isn't an image.", "error");
+        return;
+      }
+      if (file.size > MAX_ORIGINAL_BYTES) {
+        setMessage(photoMessage, "That photo is too large. Choose one under 25 MB.", "error");
+        return;
+      }
+
+      photoButton.disabled = true;
+      setMessage(photoMessage, "Uploading…", "");
+      try {
+        const blob = await resizePhoto(file);
+        const path = currentUser.id + "/" + crypto.randomUUID() + ".jpg";
+
+        const upload = await db.storage.from(PHOTO_BUCKET).upload(path, blob, {
+          contentType: "image/jpeg",
+          cacheControl: "31536000"
+        });
+        if (upload.error) {
+          setMessage(photoMessage, failure("Couldn't upload your photo.", upload.error), "error");
+          return;
+        }
+
+        const caption = photoCaption.value.trim();
+        const { error } = await db.from("photos").insert({ path, caption: caption || null });
+        if (error) {
+          // Don't leave an unlisted file behind.
+          await db.storage.from(PHOTO_BUCKET).remove([path]);
+          setMessage(photoMessage, failure("Couldn't add your photo to the wall.", error), "error");
+          return;
+        }
+
+        setMessage(photoMessage, "Your photo is on the wall!", "ok");
+        photoForm.reset();
+        loadPhotos();
+      } catch (error) {
+        setMessage(photoMessage, error.message, "error");
+      } finally {
+        photoButton.disabled = false;
+      }
+    });
+
     // --- Live updates ---
 
     const liveStatusEl = document.getElementById("live-status");
     let entriesReloadTimer = null;
     let hasBeenLive = false;
+
+    let photosReloadTimer = null;
+
+    function schedulePhotosReload() {
+      clearTimeout(photosReloadTimer);
+      photosReloadTimer = setTimeout(loadPhotos, 250);
+    }
 
     function scheduleEntriesReload() {
       // Several changes can arrive together; reload the list once.
@@ -736,6 +1015,11 @@
           { event: "*", schema: "public", table: "guestbook_entries" },
           scheduleEntriesReload
         )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "photos" },
+          schedulePhotosReload
+        )
         .subscribe((status) => {
           if (status === "SUBSCRIBED") {
             setMessage(liveStatusEl, "Live updates are on.", "ok");
@@ -743,6 +1027,7 @@
               // Reconnected after a drop: catch up on anything missed.
               loadClickTotal();
               loadEntries();
+              loadPhotos();
             }
             hasBeenLive = true;
           } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
@@ -785,6 +1070,7 @@
 
       loadClickTotal();
       loadEntries();
+      loadPhotos();
       startLiveUpdates();
     }
   </script>

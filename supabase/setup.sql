@@ -121,7 +121,84 @@ create policy "Users can update their own profile"
   with check ((select auth.uid()) = user_id);
 
 -- ---------------------------------------------------------------------------
--- 4. Live updates: send changes to the click total and the guestbook to
+-- 4. Photo wall: signed-in visitors upload photos that everyone can see.
+--    Files live in a public Storage bucket, in a folder named after the
+--    uploader's user id; the photos table lists them with a caption.
+-- ---------------------------------------------------------------------------
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('photos', 'photos', true, 5242880, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do update set
+  public = excluded.public,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "Users can upload photos to their own folder" on storage.objects;
+create policy "Users can upload photos to their own folder"
+  on storage.objects for insert
+  to authenticated
+  with check (
+    bucket_id = 'photos'
+    and (storage.foldername(name))[1] = (select auth.uid())::text
+  );
+
+-- Deleting a file also requires being able to see it. (Anyone can still view
+-- photos through their public URLs; this only covers the Storage API.)
+drop policy if exists "Users can see their own photo files" on storage.objects;
+create policy "Users can see their own photo files"
+  on storage.objects for select
+  to authenticated
+  using (
+    bucket_id = 'photos'
+    and (storage.foldername(name))[1] = (select auth.uid())::text
+  );
+
+drop policy if exists "Users can delete their own photo files" on storage.objects;
+create policy "Users can delete their own photo files"
+  on storage.objects for delete
+  to authenticated
+  using (
+    bucket_id = 'photos'
+    and (storage.foldername(name))[1] = (select auth.uid())::text
+  );
+
+create table if not exists public.photos (
+  id bigint generated always as identity primary key,
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  path text not null unique,
+  caption text check (caption is null or char_length(caption) <= 100),
+  created_at timestamptz not null default now()
+);
+
+alter table public.photos enable row level security;
+
+grant select on public.photos to anon, authenticated;
+grant insert, delete on public.photos to authenticated;
+
+drop policy if exists "Anyone can see the photo wall" on public.photos;
+create policy "Anyone can see the photo wall"
+  on public.photos for select
+  to anon, authenticated
+  using (true);
+
+-- A photo can only be listed by its uploader, and only from their own folder.
+drop policy if exists "Users can add their own photos" on public.photos;
+create policy "Users can add their own photos"
+  on public.photos for insert
+  to authenticated
+  with check (
+    user_id = (select auth.uid())
+    and path like (select auth.uid())::text || '/%'
+  );
+
+drop policy if exists "Users can remove their own photos" on public.photos;
+create policy "Users can remove their own photos"
+  on public.photos for delete
+  to authenticated
+  using ((select auth.uid()) = user_id);
+
+-- ---------------------------------------------------------------------------
+-- 5. Live updates: send changes to the click total, guestbook, and photos to
 --    open pages through Supabase Realtime. Visitors still only receive rows
 --    the policies above let them read.
 -- ---------------------------------------------------------------------------
@@ -134,7 +211,7 @@ begin
     create publication supabase_realtime;
   end if;
 
-  foreach live_table in array array['click_counter', 'guestbook_entries'] loop
+  foreach live_table in array array['click_counter', 'guestbook_entries', 'photos'] loop
     if not exists (
       select 1 from pg_publication_tables
       where pubname = 'supabase_realtime'
