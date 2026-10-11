@@ -28,12 +28,13 @@ The page follows the device's light or dark setting. The **Dark mode** / **Light
 
 ## Supabase
 
-The page uses a [Supabase](https://supabase.com) project through the `supabase-js` library loaded from a CDN. It has three features:
+The page uses a [Supabase](https://supabase.com) project through the `supabase-js` library loaded from a CDN. It has these features:
 
 - **Shared click counter** — every click of the button, by any visitor, adds to a total shown under it.
 - **Guestbook** — visitors leave a name and message; the 50 newest are shown. Messages posted while signed in can be removed by their author with the **Remove** button. Messages posted while signed out have no author and can only be removed from the Supabase dashboard (**Table Editor → guestbook_entries**).
 - **Logins** — visitors sign in with a link sent to their email. While signed in, the color they pick is saved and restored on their next visit.
-- **Live updates** — the click total and the guestbook update on every open page as soon as anyone clicks, posts, or removes a message, using Supabase Realtime. A note at the bottom of the page says whether live updates are on.
+- **Photo wall** — signed-in visitors upload photos with an optional caption; everyone can see the 60 newest. Photos are resized in the browser to at most 1600px and re-encoded as JPEG before upload, which also strips metadata such as location. Uploaders can remove their own photos. Files are stored in the public `photos` Storage bucket (5 MB limit per file).
+- **Live updates** — the click total, guestbook, and photo wall update on every open page as soon as anyone clicks, posts, or removes something, using Supabase Realtime. A note at the bottom of the page says whether live updates are on.
 
 A status line at the bottom shows whether the connection to Supabase works.
 
