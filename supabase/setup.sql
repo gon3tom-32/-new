@@ -119,3 +119,30 @@ create policy "Users can update their own profile"
   to authenticated
   using ((select auth.uid()) = user_id)
   with check ((select auth.uid()) = user_id);
+
+-- ---------------------------------------------------------------------------
+-- 4. Live updates: send changes to the click total and the guestbook to
+--    open pages through Supabase Realtime. Visitors still only receive rows
+--    the policies above let them read.
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  live_table text;
+begin
+  if not exists (select 1 from pg_publication where pubname = 'supabase_realtime') then
+    create publication supabase_realtime;
+  end if;
+
+  foreach live_table in array array['click_counter', 'guestbook_entries'] loop
+    if not exists (
+      select 1 from pg_publication_tables
+      where pubname = 'supabase_realtime'
+        and schemaname = 'public'
+        and tablename = live_table
+    ) then
+      execute format('alter publication supabase_realtime add table public.%I', live_table);
+    end if;
+  end loop;
+end
+$$;

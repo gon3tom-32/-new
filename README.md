@@ -33,6 +33,7 @@ The page uses a [Supabase](https://supabase.com) project through the `supabase-j
 - **Shared click counter** — every click of the button, by any visitor, adds to a total shown under it.
 - **Guestbook** — visitors leave a name and message; the 50 newest are shown. Messages posted while signed in can be removed by their author with the **Remove** button. Messages posted while signed out have no author and can only be removed from the Supabase dashboard (**Table Editor → guestbook_entries**).
 - **Logins** — visitors sign in with a link sent to their email. While signed in, the color they pick is saved and restored on their next visit.
+- **Live updates** — the click total and the guestbook update on every open page as soon as anyone clicks, posts, or removes a message, using Supabase Realtime. A note at the bottom of the page says whether live updates are on.
 
 A status line at the bottom shows whether the connection to Supabase works.
 
