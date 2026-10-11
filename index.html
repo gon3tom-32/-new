@@ -223,6 +223,25 @@
       text-align: center;
     }
 
+    .live-status {
+      min-height: 1.4em;
+      margin: 4px 0 0;
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .live-status.ok::before {
+      content: "";
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      margin-right: 6px;
+      border-radius: 50%;
+      background: var(--ok);
+      vertical-align: 1px;
+    }
+
     .message {
       min-height: 1.4em;
       margin: 4px 0 0;
@@ -364,9 +383,10 @@
     </section>
 
     <p id="supabase-status" class="status" role="status">Connecting to Supabase…</p>
+    <p id="live-status" class="live-status" aria-live="polite"></p>
   </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
   <script>
     const colors = [
       "#ffd6a5",
@@ -446,7 +466,14 @@
 
     // --- Color button and shared click counter ---
 
+    let shownTotal = -1;
+
     function showClickTotal(total) {
+      total = Number(total);
+      if (total < shownTotal) {
+        return;
+      }
+      shownTotal = total;
       const formatted = Number(total).toLocaleString();
       clickTotalEl.textContent = "This button has been clicked " + formatted +
         (Number(total) === 1 ? " time" : " times") + " by all visitors.";
@@ -680,6 +707,52 @@
       loadEntries();
     });
 
+    // --- Live updates ---
+
+    const liveStatusEl = document.getElementById("live-status");
+    let entriesReloadTimer = null;
+    let hasBeenLive = false;
+
+    function scheduleEntriesReload() {
+      // Several changes can arrive together; reload the list once.
+      clearTimeout(entriesReloadTimer);
+      entriesReloadTimer = setTimeout(loadEntries, 250);
+    }
+
+    function startLiveUpdates() {
+      db.channel("site-updates")
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "click_counter" },
+          (payload) => {
+            if (payload.new && Number(payload.new.total) >= shownTotal) {
+              setMessage(clickTotalEl, "", "");
+              showClickTotal(payload.new.total);
+            }
+          }
+        )
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "guestbook_entries" },
+          scheduleEntriesReload
+        )
+        .subscribe((status) => {
+          if (status === "SUBSCRIBED") {
+            setMessage(liveStatusEl, "Live updates are on.", "ok");
+            if (hasBeenLive) {
+              // Reconnected after a drop: catch up on anything missed.
+              loadClickTotal();
+              loadEntries();
+            }
+            hasBeenLive = true;
+          } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+            setMessage(liveStatusEl, "Live updates are unavailable. Reload the page to see new activity.", "");
+          } else if (status === "CLOSED") {
+            setMessage(liveStatusEl, "", "");
+          }
+        });
+    }
+
     // --- Start up ---
 
     if (!window.supabase) {
@@ -712,6 +785,7 @@
 
       loadClickTotal();
       loadEntries();
+      startLiveUpdates();
     }
   </script>
 </body>
