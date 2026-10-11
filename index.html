@@ -161,6 +161,18 @@
       background-color: var(--accent-soft);
     }
 
+    .badge {
+      display: inline-block;
+      margin-left: 6px;
+      padding: 1px 8px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--accent-text);
+      background: var(--accent);
+      border-radius: 999px;
+      vertical-align: 1px;
+    }
+
     .theme-toggle {
       display: block;
       margin: -12px -12px 8px auto;
@@ -422,7 +434,7 @@
 
       <div id="signed-in" hidden>
         <div class="account-row">
-          <p>Signed in as <strong id="user-email"></strong></p>
+          <p>Signed in as <strong id="user-email"></strong><span id="admin-badge" class="badge" hidden>Admin</span></p>
           <button id="logout-button" class="secondary" type="button">Sign out</button>
         </div>
         <p id="favorite-message" class="hint">Pick a color with the button above and it's saved as your favorite.</p>
@@ -521,6 +533,29 @@
 
     let db = null;
     let currentUser = null;
+    let isAdmin = false;
+
+    // Admins can remove anyone's messages and photos. The database enforces
+    // this; the page only uses it to decide which Remove buttons to show.
+    async function checkAdmin(userId) {
+      const { data, error } = await db.rpc("is_admin");
+      // Ignore the answer if someone else signed in meanwhile.
+      if (!currentUser || currentUser.id !== userId) {
+        return;
+      }
+      isAdmin = !error && data === true;
+      document.getElementById("admin-badge").hidden = !isAdmin;
+      if (isAdmin) {
+        guestbookHint.textContent = "You're an admin, so you can remove any message.";
+        photoHint.textContent = "You're an admin, so you can remove any photo.";
+      }
+      renderEntries(lastEntries);
+      renderPhotos(lastPhotos);
+    }
+
+    function canRemove(item) {
+      return Boolean(currentUser) && (item.user_id === currentUser.id || isAdmin);
+    }
 
     function setMessage(el, message, state) {
       el.textContent = message;
@@ -632,8 +667,14 @@
       if (user) {
         document.getElementById("user-email").textContent = user.email;
         if (user.id !== previousId) {
+          isAdmin = false;
+          document.getElementById("admin-badge").hidden = true;
           loadFavoriteColor();
+          checkAdmin(user.id);
         }
+      } else {
+        isAdmin = false;
+        document.getElementById("admin-badge").hidden = true;
       }
       guestbookHint.textContent = user
         ? "You're signed in, so you can remove messages you post."
@@ -682,7 +723,11 @@
     let lastEntries = null;
 
     async function removeEntry(entry, button) {
-      if (!window.confirm("Remove your message from the guestbook?")) {
+      const own = currentUser && entry.user_id === currentUser.id;
+      const question = own
+        ? "Remove your message from the guestbook?"
+        : "Remove this message from the guestbook? (admin)";
+      if (!window.confirm(question)) {
         return;
       }
       button.disabled = true;
@@ -693,10 +738,10 @@
         .select("id");
       if (error || !data || data.length === 0) {
         button.disabled = false;
-        setMessage(guestbookMessage, failure("Couldn't remove your message.", error), "error");
+        setMessage(guestbookMessage, failure("Couldn't remove the message.", error), "error");
         return;
       }
-      setMessage(guestbookMessage, "Your message was removed.", "ok");
+      setMessage(guestbookMessage, own ? "Your message was removed." : "The message was removed.", "ok");
       loadEntries();
     }
 
@@ -735,12 +780,12 @@
         meta.className = "entry-meta";
         meta.append(date);
 
-        if (currentUser && entry.user_id === currentUser.id) {
+        if (canRemove(entry)) {
           const remove = document.createElement("button");
           remove.type = "button";
           remove.className = "secondary entry-remove";
           remove.textContent = "Remove";
-          remove.setAttribute("aria-label", "Remove your message");
+          remove.setAttribute("aria-label", "Remove message from " + entry.name);
           remove.addEventListener("click", () => removeEntry(entry, remove));
           meta.append(remove);
         }
@@ -834,7 +879,11 @@
     }
 
     async function removePhoto(photo, button) {
-      if (!window.confirm("Remove your photo from the wall?")) {
+      const own = currentUser && photo.user_id === currentUser.id;
+      const question = own
+        ? "Remove your photo from the wall?"
+        : "Remove this photo from the wall? (admin)";
+      if (!window.confirm(question)) {
         return;
       }
       button.disabled = true;
@@ -845,12 +894,12 @@
         .select("id");
       if (error || !data || data.length === 0) {
         button.disabled = false;
-        setMessage(photoMessage, failure("Couldn't remove your photo.", error), "error");
+        setMessage(photoMessage, failure("Couldn't remove the photo.", error), "error");
         return;
       }
       // The listing is gone; now delete the file itself.
       await db.storage.from(PHOTO_BUCKET).remove([photo.path]);
-      setMessage(photoMessage, "Your photo was removed.", "ok");
+      setMessage(photoMessage, own ? "Your photo was removed." : "The photo was removed.", "ok");
       loadPhotos();
     }
 
@@ -898,12 +947,12 @@
         date.textContent = posted.toLocaleDateString();
         meta.append(date);
 
-        if (currentUser && photo.user_id === currentUser.id) {
+        if (canRemove(photo)) {
           const remove = document.createElement("button");
           remove.type = "button";
           remove.className = "secondary entry-remove";
           remove.textContent = "Remove";
-          remove.setAttribute("aria-label", "Remove your photo");
+          remove.setAttribute("aria-label", "Remove photo" + (photo.caption ? ": " + photo.caption : ""));
           remove.addEventListener("click", () => removePhoto(photo, remove));
           meta.append(remove);
         }

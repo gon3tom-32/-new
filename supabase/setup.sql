@@ -47,6 +47,36 @@ revoke all on function public.increment_clicks() from public;
 grant execute on function public.increment_clicks() to anon, authenticated;
 
 -- ---------------------------------------------------------------------------
+-- Admins: people on this list can remove any guestbook message or photo.
+-- Add someone from the SQL Editor (see the README); the website can't change
+-- this list.
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.admins (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  added_at timestamptz not null default now()
+);
+
+alter table public.admins enable row level security;
+-- No policies and no grants: visitors can't read or change the list directly.
+revoke all on public.admins from anon, authenticated;
+
+create or replace function public.is_admin()
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1 from public.admins where user_id = (select auth.uid())
+  );
+$$;
+
+revoke all on function public.is_admin() from public;
+grant execute on function public.is_admin() to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
 -- 2. Guestbook
 -- ---------------------------------------------------------------------------
 
@@ -85,7 +115,7 @@ drop policy if exists "Users can remove their own guestbook entries" on public.g
 create policy "Users can remove their own guestbook entries"
   on public.guestbook_entries for delete
   to authenticated
-  using ((select auth.uid()) = user_id);
+  using ((select auth.uid()) = user_id or (select public.is_admin()));
 
 -- ---------------------------------------------------------------------------
 -- 3. Logins: each signed-in visitor's favorite color
@@ -150,7 +180,10 @@ create policy "Users can see their own photo files"
   to authenticated
   using (
     bucket_id = 'photos'
-    and (storage.foldername(name))[1] = (select auth.uid())::text
+    and (
+      (storage.foldername(name))[1] = (select auth.uid())::text
+      or (select public.is_admin())
+    )
   );
 
 drop policy if exists "Users can delete their own photo files" on storage.objects;
@@ -159,7 +192,10 @@ create policy "Users can delete their own photo files"
   to authenticated
   using (
     bucket_id = 'photos'
-    and (storage.foldername(name))[1] = (select auth.uid())::text
+    and (
+      (storage.foldername(name))[1] = (select auth.uid())::text
+      or (select public.is_admin())
+    )
   );
 
 create table if not exists public.photos (
@@ -195,7 +231,7 @@ drop policy if exists "Users can remove their own photos" on public.photos;
 create policy "Users can remove their own photos"
   on public.photos for delete
   to authenticated
-  using ((select auth.uid()) = user_id);
+  using ((select auth.uid()) = user_id or (select public.is_admin()));
 
 -- ---------------------------------------------------------------------------
 -- 5. Live updates: send changes to the click total, guestbook, and photos to
