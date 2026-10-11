@@ -38,6 +38,20 @@ The page uses a [Supabase](https://supabase.com) project through the `supabase-j
 
 A status line at the bottom shows whether the connection to Supabase works.
 
+### Admins
+
+Admins see a **Remove** button on every guestbook message (including ones posted while signed out) and every photo, and an **Admin** badge next to their email. The database checks the admin list, so the website can't be used to fake it.
+
+To make someone an admin, they first sign in to the site once. Then run this in the Supabase **SQL Editor**, with their email:
+
+```sql
+insert into public.admins (user_id)
+select id from auth.users where email = 'someone@example.com'
+on conflict do nothing;
+```
+
+To remove an admin, run `delete from public.admins where user_id = (select id from auth.users where email = 'someone@example.com');`.
+
 ### Setup
 
 1. In the Supabase dashboard, open **SQL Editor → New query**, paste the contents of [`supabase/setup.sql`](supabase/setup.sql), and click **Run**. This creates the tables and the access rules. It's safe to run again, and you need to run it again whenever this file changes.
