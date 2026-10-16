@@ -19,7 +19,7 @@ Once this folder is on the `main` branch, it's live at <https://gon3tom-32.githu
 | `supabase/twelve_push_schedule.sql` | Scheduled jobs for reminders and push. |
 | `supabase/functions/twelve-push/` | Edge Function that sends push notifications. |
 
-Everything in the database starts with `twelve_`, so it stays separate from the Color Changer tables in the same Supabase project.
+Everything in the database starts with `twelve_`.
 
 ## Setup
 

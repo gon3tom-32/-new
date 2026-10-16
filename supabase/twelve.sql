@@ -3,8 +3,7 @@
 -- Then run twelve_content.sql the same way. Both are safe to run again;
 -- existing data is kept. Run them again whenever these files change.
 --
--- Every table and function here starts with "twelve_" so it stays separate
--- from the Color Changer tables that share this Supabase project.
+-- Every table and function here starts with "twelve_".
 --
 -- How it fits together:
 --   * A group has members, one host, one permanent invite code, and two
