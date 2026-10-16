@@ -35,7 +35,7 @@ Both are safe to run again. Run them again whenever they change.
 ### 2. Sign-in (required)
 
 - **Authentication → URL Configuration → Redirect URLs:** add `https://gon3tom-32.github.io/-new/twelve/`.
-- **Authentication → Emails → Magic Link:** add the code to the email so people can type it in. This matters on iPhone, where a link in an email opens Safari instead of the installed app. For example:
+- **Authentication → Emails → Magic Link** and **Confirm signup** (first-time sign-ins use the second one): add the code to both emails so people can type it in. This matters on iPhone, where a link in an email opens Safari instead of the installed app. For example:
 
   ```html
   <h2>Your Twelve sign-in</h2>
