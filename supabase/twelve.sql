@@ -1331,6 +1331,58 @@ $$;
 revoke all on function public.twelve_start_play(uuid, int) from public;
 grant execute on function public.twelve_start_play(uuid, int) to authenticated;
 
+-- The calendar for this season: each day's game, when it unlocks and
+-- closes, and whether you've played it. No content or answers.
+create or replace function public.twelve_schedule(p_group uuid)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  v_season int := public.twelve_current_season();
+  v_gs public.twelve_game_seasons;
+begin
+  if not public.twelve_is_member(p_group) then
+    raise exception 'Group not found.';
+  end if;
+  select * into v_gs from public.twelve_game_seasons where group_id = p_group and season = v_season;
+  if v_gs.group_id is null then
+    return null;
+  end if;
+
+  return jsonb_build_object(
+    'start_date', v_gs.start_date,
+    'unlock_time', v_gs.unlock_time,
+    'repeat_formats', to_jsonb(v_gs.repeat_formats),
+    'champion_revealed_at', v_gs.champion_revealed_at,
+    'now', now(),
+    'days', (
+      select coalesce(jsonb_agg(jsonb_build_object(
+        'day', d.day,
+        'format', d.format,
+        'title', coalesce(p.title, 'Finale Quiz'),
+        'unlocks_at', public.twelve_day_unlock(p_group, v_season, d.day),
+        'closes_at', public.twelve_day_close(p_group, v_season, d.day),
+        'winner_id', d.winner_id,
+        'played', exists (
+          select 1 from public.twelve_game_plays pl
+          where pl.group_id = p_group and pl.season = v_season and pl.day = d.day
+            and pl.user_id = (select auth.uid()) and pl.submitted_at is not null
+        )
+      ) order by d.day), '[]'::jsonb)
+      from public.twelve_game_days d
+      left join public.twelve_game_packs p on p.format = d.format and p.pack = d.pack
+      where d.group_id = p_group and d.season = v_season
+    )
+  );
+end;
+$$;
+
+revoke all on function public.twelve_schedule(uuid) from public;
+grant execute on function public.twelve_schedule(uuid) to authenticated;
+
 -- Internal: score one response. Every game is worth up to 100 points.
 create or replace function public.twelve_score(
   p_format text, p_content jsonb, p_answers jsonb, p_response jsonb, p_seconds numeric
@@ -1650,6 +1702,12 @@ begin
     from public.twelve_game_days d
     where d.group_id = p_group and d.season = v_season
       and public.twelve_day_close(p_group, v_season, d.day) <= now()
+      -- Day 12's scores would give the champion away, so they wait for the
+      -- host's reveal even after the day closes.
+      and (d.day < 12 or exists (
+        select 1 from public.twelve_game_seasons gs
+        where gs.group_id = p_group and gs.season = v_season and gs.champion_revealed_at is not null
+      ))
   ),
   scores as (
     select p.day, p.user_id, coalesce(p.score, 0) as score
