@@ -6,6 +6,10 @@ Everything lives in a single `index.html` file using plain HTML, CSS, and JavaSc
 
 Live site: <https://gon3tom-32.github.io/-new/>
 
+## Twelve
+
+The [`twelve/`](twelve/) folder holds **Twelve**, a holiday gift-exchange and 12 Days of Games app that shares this repository and Supabase project. It's served at <https://gon3tom-32.github.io/-new/twelve/>. See [`twelve/README.md`](twelve/README.md) for setup.
+
 ## Usage
 
 Open `index.html` directly in any web browser.

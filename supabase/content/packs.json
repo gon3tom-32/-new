@@ -1,0 +1,260 @@
+{
+  "_readme": "Built-in game content for Twelve. Edit this file, then run: node supabase/content/build.mjs (it rewrites supabase/twelve_content.sql). In quiz questions the FIRST choice is the right one; the build script shuffles the choices. For Two Truths and a Tradition, the first choice is the made-up one. For Speed-Matching, pairs are written left → right and the script shuffles the right-hand column.",
+
+  "trivia": [
+    {
+      "title": "Holiday Trivia",
+      "intro": "Ten questions about the season. No googling — Santa is watching.",
+      "questions": [
+        ["What are the names of Santa's reindeer that start with D?", "Dasher, Dancer, Donner", "Dasher, Dancer, Dixie", "Dancer, Donner, Dobby", "Dasher, Dolly, Donner"],
+        ["Which country started the tradition of the Christmas tree?", "Germany", "England", "Norway", "Canada"],
+        ["In 'A Christmas Carol', what is Scrooge's first name?", "Ebenezer", "Ezekiel", "Edmund", "Elias"],
+        ["How many gifts in total are given in 'The Twelve Days of Christmas'?", "364", "78", "144", "212"],
+        ["What color are mistletoe berries?", "White", "Red", "Green", "Purple"],
+        ["Which plant is known as the 'Christmas flower' and comes from Mexico?", "Poinsettia", "Holly", "Amaryllis", "Hellebore"],
+        ["In the movie 'Elf', what are the four main food groups of elves?", "Candy, candy canes, candy corn, syrup", "Cookies, cocoa, candy, cake", "Sugar, sprinkles, syrup, spice", "Candy, gingerbread, marshmallows, syrup"],
+        ["What is the best-selling single of all time, according to Guinness?", "White Christmas", "Jingle Bell Rock", "All I Want for Christmas Is You", "Silent Night"],
+        ["Which beverage company's ads helped popularize the modern red-suited Santa?", "Coca-Cola", "Pepsi", "Dr Pepper", "Schweppes"],
+        ["What do people traditionally put on top of a Christmas tree?", "A star or an angel", "A bell", "A candy cane", "A snowflake"]
+      ]
+    },
+    {
+      "title": "Holiday Trivia: Round Two",
+      "intro": "You've warmed up. Ten fresh questions, a little trickier.",
+      "questions": [
+        ["What was the first song broadcast from space, in 1965?", "Jingle Bells", "Silent Night", "Deck the Halls", "Here Comes Santa Claus"],
+        ["In 'Home Alone', where are the McCallisters flying to?", "Paris", "London", "Rome", "Miami"],
+        ["Which reindeer was added to the team in a 1939 story?", "Rudolph", "Comet", "Blitzen", "Olive"],
+        ["What is the Grinch's dog called?", "Max", "Buddy", "Spot", "Rex"],
+        ["In which country is it a tradition to eat KFC on Christmas Day?", "Japan", "South Korea", "Brazil", "Australia"],
+        ["What is a 'yule log' made of when it's a dessert?", "A rolled sponge cake", "A frozen custard", "A fruit loaf", "A meringue tower"],
+        ["Which city has a famous Christmas market called the Christkindlesmarkt?", "Nuremberg", "Vienna", "Zurich", "Prague"],
+        ["Frosty the Snowman came to life thanks to what?", "An old silk hat", "A magic scarf", "A corncob pipe", "A button nose"],
+        ["What's the name of the Island of Misfit Toys' ruler in 'Rudolph the Red-Nosed Reindeer'?", "King Moonracer", "King Frost", "Sir Toyland", "King Winterbolt"],
+        ["How many points does a snowflake almost always have?", "Six", "Five", "Eight", "Four"]
+      ]
+    }
+  ],
+
+  "emoji": [
+    {
+      "title": "Holiday Emoji Decode",
+      "intro": "Each emoji string is a holiday movie or song. Decode it!",
+      "questions": [
+        ["🏠 🙅 👦", "Home Alone", "The Holiday", "Lonely This Christmas", "No Place Like Home"],
+        ["🧝 🍝 🍬", "Elf", "The Santa Clause", "Jingle All the Way", "The Nutcracker"],
+        ["⛄ 🎩 ✨", "Frosty the Snowman", "The Snowman", "Let It Snow", "Winter Wonderland"],
+        ["🔴 👃 🦌", "Rudolph the Red-Nosed Reindeer", "Grandma Got Run Over by a Reindeer", "Prancer", "Here Comes Santa Claus"],
+        ["💚 😠 🎄 🏔️", "How the Grinch Stole Christmas", "The Nightmare Before Christmas", "Mountain Christmas", "Scrooged"],
+        ["🚂 ❄️ 🎅", "The Polar Express", "Last Train Home", "Snow Train", "The Night Before Christmas"],
+        ["🔔 🔔 🎸", "Jingle Bell Rock", "Silver Bells", "Rockin' Around the Christmas Tree", "Carol of the Bells"],
+        ["🤍 🎄 💭", "White Christmas", "Silent Night", "I'll Be Home for Christmas", "Blue Christmas"],
+        ["👶 🌟 🐑 🌙", "Silent Night", "Away in a Manger", "Twinkle Twinkle Little Star", "Starry Night"],
+        ["🎃 🎄 💀", "The Nightmare Before Christmas", "Halloweentown", "Scrooged", "Spirited"]
+      ]
+    },
+    {
+      "title": "Emoji Decode: Round Two",
+      "intro": "More emoji, more movies, more songs. Trust your gut.",
+      "questions": [
+        ["❤️ 🤷 ✈️ 🇬🇧", "Love Actually", "The Holiday", "Last Christmas", "Notting Hill"],
+        ["👻 👻 👻 💰", "A Christmas Carol", "Ghostbusters", "Three Ghosts and a Banker", "Haunted Holidays"],
+        ["🥜 🪖 🩰", "The Nutcracker", "Toy Soldiers", "Swan Lake", "Babes in Toyland"],
+        ["🏃 🛒 🤖 🎁", "Jingle All the Way", "Home Alone 2", "Toy Story", "Black Friday"],
+        ["🎅 📜 ⚖️", "Miracle on 34th Street", "The Santa Clause", "Santa's Law", "Fred Claus"],
+        ["🕯️ 🌉 😇 🏦", "It's a Wonderful Life", "The Bishop's Wife", "A Christmas Story", "Holiday Inn"],
+        ["🔫 🐮 👓 ❄️", "A Christmas Story", "Die Hard", "Christmas Vacation", "Home Alone"],
+        ["🚗 💡 🏠 🌲 🦌", "National Lampoon's Christmas Vacation", "Four Christmases", "Deck the Halls", "The Family Stone"],
+        ["🥁 👦 🎶", "The Little Drummer Boy", "Do You Hear What I Hear?", "Rum Pum Pum", "Joy to the World"],
+        ["🛷 🐴 🔔 🌨️", "Sleigh Ride", "Jingle Bells", "Winter Wonderland", "Over the River and Through the Wood"]
+      ]
+    }
+  ],
+
+  "two_truths": [
+    {
+      "title": "Two Truths and a Tradition",
+      "intro": "Each set has two real holiday traditions from around the world and one we made up. Spot the fake.",
+      "questions": [
+        ["Which tradition is made up?", "In Finland, families hide a frozen herring in the garden for children to find on Christmas morning.", "In Norway, people hide their brooms on Christmas Eve so witches can't steal them.", "In Japan, a bucket of KFC is a popular Christmas dinner."],
+        ["Which tradition is made up?", "In Portugal, children leave out a single sock filled with salt for the Three Kings' horses.", "In Iceland, 13 mischievous 'Yule Lads' visit children in the nights before Christmas.", "In Caracas, Venezuela, people roller-skate to early-morning Christmas Mass."],
+        ["Which tradition is made up?", "In Scotland, the first person to see snow on Christmas Eve must sing a carol on the doorstep.", "In Ukraine, people decorate trees with artificial spider webs for good luck.", "In Catalonia, a smiling log called Caga Tió is 'fed' and then hit with sticks until it gives out sweets."],
+        ["Which tradition is made up?", "In Denmark, the family that unwraps the most gifts must wash all the dishes on Boxing Day.", "In Sweden, millions watch the same Donald Duck cartoon special every Christmas Eve at 3 PM.", "In the Czech Republic, single women toss a shoe over their shoulder to predict whether they'll marry."],
+        ["Which tradition is made up?", "In Canada, people bury a candy cane in the snow and dig it up on New Year's Day for luck.", "In Austria, a horned beast called Krampus roams the streets to scare naughty children.", "In some American families, a pickle-shaped ornament is hidden in the tree and whoever finds it first gets a prize."],
+        ["Which tradition is made up?", "In Greece, people place a lemon under their pillow on Christmas Eve to dream of the year ahead.", "In Guatemala, people sweep their homes and burn a pile of rubbish in 'La Quema del Diablo'.", "In the Philippines, the city of San Fernando holds a Giant Lantern Festival."]
+      ]
+    },
+    {
+      "title": "Two Truths and a Tradition: Round Two",
+      "intro": "Another lap around the world. Two of these are real. One is pure fiction.",
+      "questions": [
+        ["Which tradition is made up?", "In Belgium, children polish a spoon and leave it on the windowsill for Saint Nicholas to fill with honey.", "In Italy, a kindly witch named La Befana delivers gifts on January 5th.", "In Poland, an extra place is set at the Christmas Eve table for an unexpected guest."],
+        ["Which tradition is made up?", "In Ireland, people race wheelbarrows full of holly through town on Christmas Eve.", "In Ireland, a tall candle is placed in the window on Christmas Eve to welcome travelers.", "In Mexico, Las Posadas re-enacts Mary and Joseph's search for shelter over nine nights."],
+        ["Which tradition is made up?", "In Switzerland, people tie bells to their pets' collars so Santa won't trip over them.", "In Australia, Christmas lunch is often a barbecue or seafood at the beach.", "In the Netherlands, Sinterklaas arrives by steamboat in mid-November."],
+        ["Which tradition is made up?", "In England, the youngest family member must wear a paper crown upside down until dessert.", "In England, families pull Christmas crackers that pop and hold paper crowns and jokes.", "In Wales, a horse skull on a pole called the Mari Lwyd goes door to door with singers."],
+        ["Which tradition is made up?", "In Estonia, families leave a lit candle in the freezer to keep winter spirits happy.", "In Estonia, families visit the sauna together on Christmas Eve.", "In Ethiopia, many people celebrate Christmas (Genna) on January 7th."],
+        ["Which tradition is made up?", "In France, children leave carrots in their shoes for Santa's reindeer to find in April.", "In France, a feast called Le Réveillon is held late on Christmas Eve.", "In Provence, France, families serve thirteen desserts at Christmas."]
+      ]
+    }
+  ],
+
+  "lyrics": [
+    {
+      "title": "Carol Fill-in-the-Blank",
+      "intro": "Classic carols with a word missing. Sing it in your head (or out loud).",
+      "questions": [
+        ["Dashing through the snow, in a one-horse open ____", "sleigh", "sled", "sleigh-bell", "carriage"],
+        ["Deck the halls with boughs of ____", "holly", "ivy", "pine", "berries"],
+        ["Silent night, holy night, all is calm, all is ____", "bright", "white", "light", "quiet"],
+        ["Joy to the world, the Lord is come! Let earth receive her ____", "King", "Child", "song", "light"],
+        ["We wish you a merry Christmas and a happy ____ year", "New", "glad", "good", "bright"],
+        ["O Christmas tree, O Christmas tree, how lovely are your ____", "branches", "candles", "needles", "ornaments"],
+        ["Away in a manger, no crib for a ____", "bed", "head", "rest", "babe"],
+        ["Good King Wenceslas looked out on the Feast of ____", "Stephen", "Nicholas", "Christmas", "Epiphany"],
+        ["On the twelfth day of Christmas my true love gave to me: twelve drummers ____", "drumming", "marching", "playing", "piping"],
+        ["Up on the housetop reindeer pause, out jumps good old Santa ____", "Claus", "Nick", "Kringle", "himself"]
+      ]
+    },
+    {
+      "title": "Carol Fill-in-the-Blank: Round Two",
+      "intro": "Deeper cuts this time. How well do you really know the verses?",
+      "questions": [
+        ["Hark! The herald angels sing, glory to the newborn ____", "King", "Child", "Lord", "Prince"],
+        ["O come, all ye faithful, joyful and ____", "triumphant", "jubilant", "victorious", "radiant"],
+        ["God rest ye merry, gentlemen, let nothing you ____", "dismay", "delay", "dissuade", "deny"],
+        ["O little town of Bethlehem, how still we see thee ____", "lie", "sleep", "rest", "glow"],
+        ["Angels we have heard on high, sweetly singing o'er the ____", "plains", "hills", "fields", "town"],
+        ["The first Noel the angel did say was to certain poor shepherds in fields as they ____", "lay", "slept", "prayed", "stayed"],
+        ["It came upon the midnight clear, that glorious song of ____", "old", "joy", "peace", "gold"],
+        ["Here we come a-wassailing among the leaves so ____", "green", "bright", "white", "gold"],
+        ["Jolly old Saint Nicholas, lean your ear this ____", "way", "night", "time", "day"],
+        ["O holy night, the stars are brightly ____", "shining", "gleaming", "glowing", "burning"]
+      ]
+    }
+  ],
+
+  "bingo": [
+    {
+      "title": "Holiday Bingo",
+      "intro": "Tap a square when it happens to you today. You have until the game closes, so come back and mark more. 3 points a square, 8 points a line.",
+      "squares": [
+        "Someone sings a carol out loud", "You hear 'All I Want for Christmas Is You'", "You see a house with blinking lights",
+        "Someone says 'It's cold outside!'", "You eat a cookie", "You wrap a present", "You spot an inflatable lawn decoration",
+        "You drink something hot", "You see a Santa hat", "Someone mentions their holiday plans", "Tape gets stuck to itself",
+        "You see a candy cane", "You watch part of a holiday movie", "You see snow (real or fake)", "Someone wears an ugly sweater",
+        "You say 'Happy Holidays' to a stranger", "You hear jingle bells", "You see a wreath on a door", "You find a stray bit of glitter",
+        "You check a gift off your list", "You see someone carrying a big shopping bag", "You smell pine or cinnamon",
+        "A pet does something festive", "You text a holiday greeting"
+      ]
+    },
+    {
+      "title": "Holiday Bingo: Round Two",
+      "intro": "A fresh card for a fresh day. Same rules: mark squares as they happen until the game closes.",
+      "squares": [
+        "You light a candle", "Someone asks what you want for Christmas", "You see a gingerbread house", "You hear a holiday ad on TV or radio",
+        "You see a red bow", "You find a gift you forgot you bought", "You see a snowman (any kind)", "Someone says 'Ho ho ho'",
+        "You eat something with peppermint", "You see an Advent calendar", "You put on cozy socks", "You see a nativity scene",
+        "Someone hums a holiday tune", "You get a holiday card", "You untangle a string of lights", "You see a reindeer decoration",
+        "Someone talks about the weather", "You see an elf (decoration or costume)", "You drink hot chocolate", "You hear sleigh bells",
+        "You see tinsel", "Someone mentions New Year's resolutions", "You share a treat with someone", "You take a festive photo"
+      ]
+    }
+  ],
+
+  "scavenger": [
+    {
+      "title": "Holiday Scavenger Hunt",
+      "intro": "The clock starts when you press Start. Find each item and snap a photo. Faster means more points: full speed bonus inside 10 minutes.",
+      "items": [
+        "Something red and something green together", "An ornament", "Something that sparkles", "A mug you'd drink cocoa from",
+        "Something shaped like a star", "A pair of cozy socks"
+      ]
+    },
+    {
+      "title": "Scavenger Hunt: Round Two",
+      "intro": "New list, same clock. Find, snap, go! Full speed bonus inside 10 minutes.",
+      "items": [
+        "A roll of wrapping paper or a gift bag", "Something with a snowflake on it", "A candle", "Something that jingles",
+        "A cookie (bonus points for eating it after)", "Something gold"
+      ]
+    }
+  ],
+
+  "photo": [
+    {
+      "title": "Photo Challenge",
+      "intro": "Take your best shot. The host picks the winner after the day closes.",
+      "prompt": "Recreate your favorite holiday movie scene with whatever's lying around the house.",
+      "tips": "Props are encouraged. Pets in costume are very encouraged."
+    },
+    {
+      "title": "Photo Challenge: Round Two",
+      "intro": "One photo, one winner, chosen by the host once the day closes.",
+      "prompt": "Show us the most festive corner of your home.",
+      "tips": "Lights on, lamps off. Good angles win hearts."
+    }
+  ],
+
+  "wyr": [
+    {
+      "title": "Holiday Would You Rather",
+      "intro": "No wrong answers. Pick one of each, then see how the group split.",
+      "questions": [
+        ["Unwrap all your gifts on Christmas Eve", "Wait until Christmas morning"],
+        ["Have a white Christmas every year", "Have a beach Christmas every year"],
+        ["Only eat Christmas cookies for a week", "Never eat a Christmas cookie again"],
+        ["Be one of Santa's elves", "Be one of Santa's reindeer"],
+        ["Get one big gift", "Get lots of small gifts"],
+        ["Wear an ugly sweater to every event in December", "Wear a Santa hat to every event in December"],
+        ["Decorate in November", "Decorate the week before Christmas"],
+        ["Hear 'Jingle Bells' on repeat all day", "Hear nothing but silence all December"]
+      ]
+    },
+    {
+      "title": "Would You Rather: Round Two",
+      "intro": "Back for more. Answer all eight, then compare with the group.",
+      "questions": [
+        ["Wrap every present perfectly", "Shop for every present in one day"],
+        ["Spend the holidays in a snowy cabin", "Spend the holidays in a big city"],
+        ["Have real candles on your tree", "Have a tree that sings when you walk by"],
+        ["Eat turkey for every meal on Christmas", "Eat only desserts on Christmas"],
+        ["Be able to fly like Santa's sleigh", "Be able to fit down any chimney"],
+        ["Get socks every Christmas forever", "Get a surprise every Christmas, good or bad"],
+        ["Watch the same holiday movie every year", "Watch a new one every year"],
+        ["Host the big family dinner", "Be the guest who brings dessert"]
+      ]
+    }
+  ],
+
+  "speed_match": [
+    {
+      "title": "Speed-Matching",
+      "intro": "Match each character to their movie. The clock starts when you press Start: accuracy scores most, speed adds a bonus (full bonus inside 30 seconds).",
+      "left_label": "Character",
+      "right_label": "Movie",
+      "pairs": [
+        ["Buddy", "Elf"], ["Kevin McCallister", "Home Alone"], ["Clark Griswold", "Christmas Vacation"], ["Ralphie", "A Christmas Story"],
+        ["George Bailey", "It's a Wonderful Life"], ["Jack Skellington", "The Nightmare Before Christmas"], ["Scott Calvin", "The Santa Clause"],
+        ["Kris Kringle", "Miracle on 34th Street"]
+      ]
+    },
+    {
+      "title": "Speed-Matching: Round Two",
+      "intro": "Match each holiday figure to what they're known for. Clock starts on Start; full speed bonus inside 30 seconds.",
+      "left_label": "Who",
+      "right_label": "Known for",
+      "pairs": [
+        ["Rudolph", "A glowing red nose"], ["Frosty", "Coming to life with a magic hat"], ["The Grinch", "Stealing Christmas"],
+        ["Ebenezer Scrooge", "Three ghostly visitors"], ["La Befana", "Delivering gifts on a broomstick"], ["Krampus", "Scaring naughty children"],
+        ["The Nutcracker", "Battling the Mouse King"], ["Cindy Lou Who", "Being 'no more than two'"]
+      ]
+    }
+  ],
+
+  "finale": [
+    {
+      "title": "Finale Quiz",
+      "intro": "Twelve questions pulled from everything you played this month."
+    }
+  ]
+}
