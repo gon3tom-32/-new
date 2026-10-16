@@ -107,8 +107,12 @@ function GroupShell({ groupId, rest }) {
 
   return html`<${GroupContext.Provider} value=${group}>
     ${showTabs && html`<header class="topbar">
-      <button class="topbar-title grow" onClick=${() => setSwitcher(true)} aria-label="Switch group">
-        <span>${group.group.name}</span><span class="chev">▾</span>
+      <a class="brand" href=${`#/g/${groupId}/home`} aria-label="Twelve — go to Home">
+        <img src="icons/icon.svg" alt="" width="34" height="34" />
+        <span class="brand-word">Twelve<span class="dot">.</span></span>
+      </a>
+      <button class="group-chip" onClick=${() => setSwitcher(true)} aria-label=${`${group.group.name} — switch group`}>
+        <span>${group.group.name}</span><span class="chev" aria-hidden="true">▾</span>
       </button>
       <a class="icon-btn" href="#/inbox" aria-label=${unread ? `${unread} unread notifications` : "Notifications"}>
         ${Icons.bell()}${unread > 0 && html`<span class="badge-dot">${unread > 9 ? "9+" : unread}</span>`}
