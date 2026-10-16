@@ -85,13 +85,15 @@ function QuestionnaireCard() {
   const g = useGroup();
   const done = g.gift.questionnaire?.completed_at;
   const answered = (g.gift.questionnaire?.answers || []).filter((a) => a?.trim()).length;
-  return html`<a class="card card-link stack" href=${`#/g/${g.groupId}/gifts/questions`}>
+  const label = done ? "Edit my answers" : answered ? `Continue (${answered} of ${QUESTIONS.length})` : "Start the questionnaire";
+  return html`<section class="card stack">
     <div class="row between">
       <h3>${done ? "Your questionnaire ✓" : "Tell your Secret Santa about you"}</h3>
       <span class=${"pill " + (done ? "green" : "red")}>${done ? "Done" : `${answered} of ${QUESTIONS.length}`}</span>
     </div>
-    <p class="muted">${done ? "Your Secret Santa sees these answers. Tap to update them." : "Nine quick questions instead of a wish list. Only the person who draws your name sees them."}</p>
-  </a>`;
+    <p class="muted">${done ? "Your Secret Santa sees these answers. You can change them any time." : "Nine quick questions instead of a wish list. Only the person who draws your name sees them."}</p>
+    <a class=${"btn " + (done ? "ghost" : "green")} href=${`#/g/${g.groupId}/gifts/questions`}>${label}</a>
+  </section>`;
 }
 
 function Roster() {
