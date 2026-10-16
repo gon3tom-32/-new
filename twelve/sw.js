@@ -2,7 +2,7 @@
 // shows push notifications.
 //
 // Bump VERSION whenever files change so phones pick up the new version.
-const VERSION = "twelve-v4";
+const VERSION = "twelve-v5";
 const SHELL = [
   "./",
   "index.html",
