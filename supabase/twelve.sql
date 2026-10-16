@@ -810,8 +810,8 @@ begin
   end loop;
 
   insert into public.twelve_matches (group_id, season, giver_id, recipient_id)
-  select p_group, v_season, v_people[i], v_order[i]
-  from generate_series(1, v_n) as i;
+  select p_group, v_season, v_people[k.n], v_order[k.n]
+  from generate_series(1, v_n) as k(n);
 
   update public.twelve_gift_seasons set drawn_at = now()
   where group_id = p_group and season = v_season;
@@ -1843,7 +1843,7 @@ begin
   insert into public.twelve_notifications (user_id, group_id, title, body, url, dedupe_key)
   select m.user_id, d.group_id,
     'Day ' || d.day || ' is open! 🎄',
-    p.title || ' just unlocked in ' || g.name || '. You have 24 hours.',
+    coalesce(p.title, 'Today''s game') || ' just unlocked in ' || g.name || '. You have 24 hours.',
     '#/g/' || d.group_id || '/day/' || d.day,
     'unlock:' || d.group_id || ':' || v_season || ':' || d.day || ':' || m.user_id
   from public.twelve_game_days d
@@ -1855,10 +1855,6 @@ begin
            public.twelve_day_close(d.group_id, v_season, d.day) as c
   ) t
   where d.season = v_season and now() >= t.u and now() < t.c
-    and coalesce(p.title, '') <> '' or (d.season = v_season and d.format = 'finale'
-      and now() >= public.twelve_day_unlock(d.group_id, v_season, d.day)
-      and now() < public.twelve_day_close(d.group_id, v_season, d.day)
-      and g.games_enabled)
   on conflict (dedupe_key) do nothing;
 
   -- Three hours before a day closes, nudge anyone who hasn't played.
