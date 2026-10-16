@@ -456,6 +456,66 @@ create policy "Members post in their group chat"
     and public.twelve_is_member(group_id)
   );
 
+-- Emoji reactions on chat messages: one per person per message, from a
+-- fixed set of five. Picking a different emoji replaces yours.
+create table if not exists public.twelve_chat_reactions (
+  message_id bigint not null references public.twelve_chat_messages (id) on delete cascade,
+  user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  group_id uuid not null references public.twelve_groups (id) on delete cascade,
+  emoji text not null check (emoji in ('❤️', '😂', '😮', '👍', '🎄')),
+  created_at timestamptz not null default now(),
+  primary key (message_id, user_id)
+);
+
+create index if not exists twelve_chat_reactions_group_idx
+  on public.twelve_chat_reactions (group_id, message_id);
+
+-- Lets live updates for removed reactions reach the right group.
+alter table public.twelve_chat_reactions replica identity full;
+
+alter table public.twelve_chat_reactions enable row level security;
+
+grant select, insert, update, delete on public.twelve_chat_reactions to authenticated;
+
+drop policy if exists "Members see reactions in their group chat" on public.twelve_chat_reactions;
+create policy "Members see reactions in their group chat"
+  on public.twelve_chat_reactions for select
+  to authenticated
+  using (public.twelve_is_member(group_id));
+
+drop policy if exists "Members react to messages in their group chat" on public.twelve_chat_reactions;
+create policy "Members react to messages in their group chat"
+  on public.twelve_chat_reactions for insert
+  to authenticated
+  with check (
+    user_id = (select auth.uid())
+    and public.twelve_is_member(group_id)
+    and exists (
+      select 1 from public.twelve_chat_messages m
+      where m.id = message_id and m.group_id = twelve_chat_reactions.group_id
+    )
+  );
+
+drop policy if exists "Change your own reaction" on public.twelve_chat_reactions;
+create policy "Change your own reaction"
+  on public.twelve_chat_reactions for update
+  to authenticated
+  using (user_id = (select auth.uid()))
+  with check (
+    user_id = (select auth.uid())
+    and public.twelve_is_member(group_id)
+    and exists (
+      select 1 from public.twelve_chat_messages m
+      where m.id = message_id and m.group_id = twelve_chat_reactions.group_id
+    )
+  );
+
+drop policy if exists "Remove your own reaction" on public.twelve_chat_reactions;
+create policy "Remove your own reaction"
+  on public.twelve_chat_reactions for delete
+  to authenticated
+  using (user_id = (select auth.uid()));
+
 -- ---------------------------------------------------------------------------
 -- 6. Gift exchange
 -- ---------------------------------------------------------------------------
@@ -2111,7 +2171,7 @@ create policy "twelve: see game photos"
   using (bucket_id = 'twelve-photos' and public.twelve_can_read_photo(name));
 
 -- ---------------------------------------------------------------------------
--- 10. Live updates for the group chat and the notification bell.
+-- 10. Live updates for the group chat, its reactions, and the notification bell.
 -- ---------------------------------------------------------------------------
 
 do $$
@@ -2122,7 +2182,7 @@ begin
     create publication supabase_realtime;
   end if;
 
-  foreach live_table in array array['twelve_chat_messages', 'twelve_notifications'] loop
+  foreach live_table in array array['twelve_chat_messages', 'twelve_chat_reactions', 'twelve_notifications'] loop
     if not exists (
       select 1 from pg_publication_tables
       where pubname = 'supabase_realtime'
