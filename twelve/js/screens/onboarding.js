@@ -24,6 +24,14 @@ export async function continueOnboarding(app) {
   return go(target ? `/g/${target.id}/home` : "/join");
 }
 
+// Returning members (new phone, signed out) go straight to sign-in and
+// land back in their groups. Clear any half-finished join or create.
+function signInExisting() {
+  storage.set("pendingCode", null);
+  storage.set("pendingCreate", null);
+  go("/signin");
+}
+
 function PanelPage({ back, title, subtitle, children }) {
   return html`<div class="panel-page">
     <div class="panel-head">
@@ -96,6 +104,10 @@ export function Welcome() {
           ? html`<button class="link-btn" style="color:#fff" onClick=${() => { storage.set("pendingCreate", true); go("/signin"); }}>Starting a group? Create one</button>`
           : html`<button class="link-btn" style="color:#fff" onClick=${() => go("/code")}>Skip</button>`}
       </div>
+      <div class="center small" style="opacity:0.9">
+        Already in a group?${" "}
+        <button class="link-btn" style="color:#fff" onClick=${signInExisting}>Sign in</button>
+      </div>
     </div>
   </div>`;
 }
@@ -151,6 +163,10 @@ export function CodeEntry({ code: initial = "" }) {
         Hosting this year?${" "}
         <button type="button" class="link-btn" onClick=${() => { storage.set("pendingCreate", true); storage.set("pendingCode", null); continueOnboarding(app); }}>Start a new group</button>
       </p>
+      ${!app.user && html`<p class="center small muted">
+        Already in a group?${" "}
+        <button type="button" class="link-btn" onClick=${signInExisting}>Sign in</button>
+      </p>`}
     </form>
   <//>`;
 }
@@ -200,7 +216,8 @@ export function SignIn() {
     <//>`;
   }
 
-  return html`<${PanelPage} back="#/code" title="What's your email?" subtitle="No passwords. We'll email you a link to sign in.">
+  const joining = storage.get("pendingCode") || storage.get("pendingCreate");
+  return html`<${PanelPage} back=${joining ? "#/code" : "#/welcome"} title="What's your email?" subtitle="No passwords. We'll email you a link to sign in.">
     <form class="stack-lg" onSubmit=${(e) => { e.preventDefault(); send.run(); }}>
       <div class="field">
         <label for="email">Email</label>
