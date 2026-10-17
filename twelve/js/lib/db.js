@@ -85,6 +85,15 @@ export async function uploadGamePhoto(groupId, day, userId, file) {
   return path;
 }
 
+// Chat photos are visible to the whole group right away.
+export async function uploadChatPhoto(groupId, userId, file) {
+  const blob = await resizeImage(file, 1600, 0.82);
+  const path = `${groupId}/${currentSeason()}/chat/${userId}/${randomName()}`;
+  const { error } = await sb.storage.from("twelve-photos").upload(path, blob, { contentType: "image/jpeg" });
+  if (error) throw friendly(error);
+  return path;
+}
+
 // Signed (temporary) links for private game photos, cached for the session.
 const signedCache = new Map();
 export async function signedUrls(paths) {
