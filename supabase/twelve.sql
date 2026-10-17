@@ -564,11 +564,20 @@ create table if not exists public.twelve_questionnaires (
   group_id uuid not null references public.twelve_groups (id) on delete cascade,
   season int not null,
   user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
-  answers jsonb not null default '[]'::jsonb check (jsonb_typeof(answers) = 'array'),
+  answers jsonb not null default '{}'::jsonb check (jsonb_typeof(answers) = 'object'),
   completed_at timestamptz,
   updated_at timestamptz not null default now(),
   primary key (group_id, season, user_id)
 );
+
+-- The questionnaire changed from nine typed answers (a list) to mostly
+-- tap-to-pick answers (an object keyed by question). Old answers are
+-- cleared so everyone starts fresh with the new questions.
+delete from public.twelve_questionnaires where jsonb_typeof(answers) <> 'object';
+alter table public.twelve_questionnaires alter column answers set default '{}'::jsonb;
+alter table public.twelve_questionnaires drop constraint if exists twelve_questionnaires_answers_check;
+alter table public.twelve_questionnaires add constraint twelve_questionnaires_answers_check
+  check (jsonb_typeof(answers) = 'object');
 
 -- The anonymous Q&A between a giver and their recipient. The recipient can't
 -- read this table; they get their thread through twelve_anon_thread(), which

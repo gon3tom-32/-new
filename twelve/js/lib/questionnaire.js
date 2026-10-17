@@ -201,9 +201,10 @@ export function AnswerSummary({ answers, name }) {
     return side && html`<span class="pill">${side[0]} ${side[1]}</span>`;
   }).filter(Boolean);
   const chips = (id) => (a[id] || []).map((label) => html`<span class="pill">${emojiFor(byId[id], label)} ${label}</span>`);
-  const row = (title, content) => content && (!Array.isArray(content) || content.length) && html`<div class="answer-card">
+  // Skips empty answers (including a 0 from an empty list's length).
+  const row = (title, content) => (content ? html`<div class="answer-card">
     <div class="q">${title}</div><div class="a">${content}</div>
-  </div>`;
+  </div>` : null);
   const pickLabel = (id) => a[id] && `${emojiFor(byId[id], a[id])} ${a[id]}`;
   const avoid = a.avoid || {};
   const avoidList = [...(avoid.picks || []), ...(avoid.other?.trim() ? [avoid.other.trim()] : [])];
