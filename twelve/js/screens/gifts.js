@@ -52,23 +52,21 @@ function ExchangeHeader() {
   </div>`;
 }
 
+// Shown only to people who haven't joined yet. Once you're in, you can leave
+// from your own row in the roster.
 function JoinCard() {
   const g = useGroup();
   const { user } = useApp();
-  const inExchange = g.gift.participants.includes(user.id);
-  const toggle = useAction(async () => {
-    await rpc("twelve_set_gift_participant", { p_group: g.groupId, p_user: user.id, p_in: !inExchange });
+  const join = useAction(async () => {
+    await rpc("twelve_set_gift_participant", { p_group: g.groupId, p_user: user.id, p_in: true });
     await g.reload();
   });
+  if (g.gift.participants.includes(user.id)) return null;
   return html`<div class="card stack">
-    <h3>${inExchange ? "You're in this year's exchange ✓" : "Want in this year?"}</h3>
-    <p class="muted">${inExchange
-      ? `When ${g.isHost ? "you draw" : "the host draws"} names, you'll get a private notification with who you're giving to.`
-      : "Join the exchange to be part of the draw. You can leave any time before names are drawn."}</p>
-    <${ErrorNote} error=${toggle.error} />
-    <button class=${"btn " + (inExchange ? "ghost" : "green")} disabled=${toggle.busy} onClick=${toggle.run}>
-      ${inExchange ? "Leave the exchange" : "Count me in"}
-    </button>
+    <h3>Want in this year?</h3>
+    <p class="muted">Join the exchange to be part of the draw. You can leave any time before names are drawn.</p>
+    <${ErrorNote} error=${join.error} />
+    <button class="btn green" disabled=${join.busy} onClick=${join.run}>Count me in</button>
   </div>`;
 }
 
@@ -112,8 +110,10 @@ function Roster() {
           ${partnerOf(m.user_id) && html`<div class="small muted">💞 Won't draw ${partnerOf(m.user_id)}</div>`}
         </div>
         ${g.isHost && !drawn && m.user_id !== user.id && html`<button class="btn ghost small" disabled=${setIn.busy} onClick=${() => setIn.run(m.user_id, false)}>Remove</button>`}
+        ${!drawn && m.user_id === user.id && html`<button class="btn ghost small" disabled=${setIn.busy} onClick=${() => setIn.run(user.id, false)}>Leave</button>`}
       </div>`)}
     </div>
+    ${!drawn && people.some((m) => m.user_id === user.id) && html`<p class="small muted">When ${g.isHost ? "you draw" : "the host draws"} names, you'll get a private notification with who you're giving to.</p>`}
     ${drawn && html`<p class="small muted">Everyone can see who's taking part — but only you know who you're giving to.</p>`}
     ${g.isHost && !drawn && outside.length > 0 && html`
       <div class="section-label" style="margin-top:6px">Not in yet</div>
