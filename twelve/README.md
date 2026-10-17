@@ -94,7 +94,7 @@ What to know:
 - Members opt themselves in, and the host can add or remove people, until names are drawn. The host sets a budget guideline and a gathering date and can change them any time. Each change notifies the whole group.
 - The host marks couples, then taps **Draw names** when ready. The draw runs in the database: nobody draws themselves, couples never draw each other, everything else is random. Each person gets a private notification and a scratch-off card.
 - Each person can only ever read their own match. The roster of participants is visible to everyone.
-- The nine-question questionnaire is one question at a time with a progress bar. Only your giver can read your answers.
+- The questionnaire is 11 quick questions, one at a time with a progress bar: mostly tap-to-pick (this or that, vibes, treats, colors, scents, ideal gift, gift cards, things to avoid) plus three short typed answers. Any question can be skipped. Only your giver can read your answers, shown as a profile card. The questions live in `twelve/js/lib/questionnaire.js`; keep the question ids stable once people have answered, and update the labels in the gift-ideas function if you add one.
 - **Anonymous Q&A:** givers message their recipient from the match screen. Recipients reply under **Your Secret Santa**. The database never shows a recipient who their giver is.
 - **Gift bought** is a private checkbox; nobody else sees it.
 - **Reset Secret Santa:** after the draw, the host can undo it and draw again. This deletes every match, the anonymous messages, and the "gift bought" checkmarks, and tells everyone in the exchange. It keeps who's in the exchange, couples, budget, date, and questionnaire answers.

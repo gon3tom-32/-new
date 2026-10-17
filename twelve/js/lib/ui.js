@@ -187,8 +187,8 @@ export const Icons = {
   camera: () => icon(html`<path d="M4 7h3l2-3h6l2 3h3v13H4z" /><circle cx="12" cy="13" r="4" />`),
 };
 
-export function BackLink({ href, label = "Back" }) {
-  return html`<a class="back-link" href=${href}>${Icons.back()} ${label}</a>`;
+export function BackLink({ href, label = "Back", onClick }) {
+  return html`<a class="back-link" href=${href} onClick=${onClick}>${Icons.back()} ${label}</a>`;
 }
 
 export async function shareInvite(group) {

@@ -3,19 +3,9 @@
 import { html, useState, useEffect, useRef } from "../vendor/preact-htm.mjs";
 import { sb, q, rpc, currentSeason } from "../lib/db.js";
 import { useApp, useGroup } from "../lib/state.js";
+import { QUESTIONS, QuestionInput, AnswerSummary, countAnswered, isAnswered, normalize } from "../lib/questionnaire.js";
 import { Avatar, ErrorNote, Spinner, useAction, useAsync, Countdown, formatDate, daysUntil, BackLink, toast, formatTime } from "../lib/ui.js";
 
-export const QUESTIONS = [
-  "What's your go-to snack or drink when you're relaxing?",
-  "What's a hobby or activity you've been wanting to try?",
-  "What's your favorite way to spend a lazy weekend?",
-  "What color, scent, or style are you drawn to lately?",
-  "What's something small that always makes you smile?",
-  "What's the last thing you bought for yourself that you loved?",
-  "What show, book, or artist are you into right now?",
-  "What's something you'd never buy for yourself but secretly want?",
-  "Practical stuff: any allergies, dislikes, or things you don't need more of?",
-];
 
 // ---------- Main screen ----------
 
@@ -85,14 +75,14 @@ function JoinCard() {
 function QuestionnaireCard() {
   const g = useGroup();
   const done = g.gift.questionnaire?.completed_at;
-  const answered = (g.gift.questionnaire?.answers || []).filter((a) => a?.trim()).length;
+  const answered = countAnswered(g.gift.questionnaire?.answers);
   const label = done ? "Edit my answers" : answered ? `Continue (${answered} of ${QUESTIONS.length})` : "Start the questionnaire";
   return html`<section class="card stack">
     <div class="row between">
       <h3>${done ? "Your questionnaire ✓" : "Tell your Secret Santa about you"}</h3>
       <span class=${"pill " + (done ? "green" : "red")}>${done ? "Done" : `${answered} of ${QUESTIONS.length}`}</span>
     </div>
-    <p class="muted">${done ? "Your Secret Santa sees these answers. You can change them any time." : "Nine quick questions instead of a wish list. Only the person who draws your name sees them. (If they ask for AI gift ideas, your answers, never your name, go to Google's AI.)"}</p>
+    <p class="muted">${done ? "Your Secret Santa sees these answers. You can change them any time." : "Quick, mostly tap-to-pick questions instead of a wish list. Only the person who draws your name sees them. (If they ask for AI gift ideas, your answers, never your name, go to Google's AI.)"}</p>
     <a class=${"btn " + (done ? "ghost" : "green")} href=${`#/g/${g.groupId}/gifts/questions`}>${label}</a>
   </section>`;
 }
@@ -378,7 +368,7 @@ function MyMatch() {
     </section>`;
   }
 
-  const list = answers.data?.answers || [];
+  const hasAnswers = countAnswered(answers.data?.answers) > 0;
   return html`<section class="card stack">
     <div class="row">
       <${Avatar} profile=${recipient} size=${64} />
@@ -394,13 +384,10 @@ function MyMatch() {
     <div style="border-top:1px solid var(--line);padding-top:8px">
       <div class="section-label">About ${recipient.display_name}</div>
       ${answers.loading && html`<${Spinner} />`}
-      ${!answers.loading && !list.some((a) => a?.trim()) && html`<p class="muted" style="padding:12px 0">${recipient.display_name} hasn't filled out their questionnaire yet. We'll keep nudging them.</p>`}
-      ${QUESTIONS.map((question, i) => list[i]?.trim() && html`<div class="answer-card">
-        <div class="q">${question}</div>
-        <div class="a">${list[i]}</div>
-      </div>`)}
+      ${!answers.loading && !hasAnswers && html`<p class="muted" style="padding:12px 0">${recipient.display_name} hasn't filled out their questionnaire yet. We'll keep nudging them.</p>`}
+      ${hasAnswers && html`<${AnswerSummary} answers=${answers.data.answers} name=${recipient.display_name} />`}
     </div>
-    ${list.some((a) => a?.trim()) && html`<${GiftIdeas} groupId=${g.groupId} name=${recipient.display_name} />`}
+    ${hasAnswers && html`<${GiftIdeas} groupId=${g.groupId} name=${recipient.display_name} />`}
     <a class="btn ghost block" href=${`#/g/${g.groupId}/gifts/ask`}>🤫 Ask ${recipient.display_name} anonymously</a>
   </section>`;
 }
@@ -424,9 +411,8 @@ function SantaInboxCard() {
 export function Questionnaire() {
   const g = useGroup();
   const { user } = useApp();
-  const existing = g.gift.questionnaire?.answers || [];
-  const [answers, setAnswers] = useState(() => QUESTIONS.map((_, i) => existing[i] || ""));
-  const firstEmpty = answers.findIndex((a) => !a.trim());
+  const [answers, setAnswers] = useState(() => normalize(g.gift.questionnaire?.answers));
+  const firstEmpty = QUESTIONS.findIndex((q) => !isAnswered(q, answers[q.id]));
   const [index, setIndex] = useState(firstEmpty === -1 ? 0 : firstEmpty);
   const [finished, setFinished] = useState(false);
 
@@ -440,45 +426,68 @@ export function Questionnaire() {
     };
     if (complete) row.completed_at = new Date().toISOString();
     await q(sb.from("twelve_questionnaires").upsert(row, { onConflict: "group_id,season,user_id" }));
+    return true;
   });
 
+  const saveAndExit = async (e) => {
+    e.preventDefault();
+    if (!(await save.run(answers, Boolean(g.gift.questionnaire?.completed_at)))) return;
+    await g.reload();
+    location.hash = `#/g/${g.groupId}/gifts`;
+  };
+  const go = (i) => {
+    setIndex(i);
+    window.scrollTo(0, 0);
+  };
   const advance = async () => {
     const last = index === QUESTIONS.length - 1;
     const complete = last || Boolean(g.gift.questionnaire?.completed_at);
-    await save.run(answers, complete);
+    if (!(await save.run(answers, complete))) return;
     if (last) {
       await g.reload();
       setFinished(true);
+      window.scrollTo(0, 0);
     } else {
-      setIndex(index + 1);
+      go(index + 1);
     }
   };
 
   if (finished) {
-    return html`<div class="panel-page"><div class="panel-body stack-lg center" style="padding-top:80px">
-      <div style="font-size:4rem">🎉</div>
-      <h1>All done!</h1>
-      <p class="muted">Your Secret Santa will see your answers once names are drawn. You can come back and change them any time.</p>
+    return html`<div class="panel-page"><div class="panel-body stack-lg">
+      <div class="center stack" style="padding-top:40px">
+        <div style="font-size:4rem">🎉</div>
+        <h1>All done!</h1>
+        <p class="muted">Here's what your Secret Santa will see once names are drawn. You can come back and change it any time.</p>
+      </div>
+      <section class="card stack">
+        <div class="section-label">About you</div>
+        <${AnswerSummary} answers=${answers} name="Your" />
+      </section>
       <a class="btn block" href=${`#/g/${g.groupId}/gifts`}>Back to the exchange</a>
     </div></div>`;
   }
 
+  const question = QUESTIONS[index];
   const progress = ((index + 1) / QUESTIONS.length) * 100;
+  const answered = isAnswered(question, answers[question.id]);
   return html`<div class="panel-page">
     <div class="panel-body stack-lg">
-      <${BackLink} href=${`#/g/${g.groupId}/gifts`} label="Save & exit" />
+      <${BackLink} href=${`#/g/${g.groupId}/gifts`} label="Save & exit" onClick=${saveAndExit} />
       <div class="stack">
         <div class="row between small"><b>Question ${index + 1} of ${QUESTIONS.length}</b><span class="muted">Only your Secret Santa sees this</span></div>
         <div class="progress" role="progressbar" aria-valuenow=${index + 1} aria-valuemin="1" aria-valuemax=${QUESTIONS.length}><div style=${`width:${progress}%`}></div></div>
       </div>
-      <h1 style="font-size:1.7rem">${QUESTIONS[index]}</h1>
-      <textarea class="textarea" maxlength="500" placeholder="Type your answer…" key=${index} autofocus
-        value=${answers[index]} onInput=${(e) => { const next = [...answers]; next[index] = e.currentTarget.value; setAnswers(next); }}></textarea>
+      <div class="stack" style="gap:6px">
+        <h1 style="font-size:1.7rem;text-wrap:balance">${question.title}</h1>
+        ${question.sub && html`<p class="muted">${question.sub}</p>`}
+      </div>
+      <${QuestionInput} question=${question} value=${answers[question.id]}
+        onChange=${(v) => setAnswers({ ...answers, [question.id]: v })} />
       <${ErrorNote} error=${save.error} />
       <div class="row">
-        ${index > 0 && html`<button class="btn ghost" onClick=${() => setIndex(index - 1)}>Back</button>`}
+        ${index > 0 && html`<button class="btn ghost" onClick=${() => go(index - 1)}>Back</button>`}
         <button class="btn grow" disabled=${save.busy} onClick=${advance}>
-          ${index === QUESTIONS.length - 1 ? "Finish" : answers[index].trim() ? "Next" : "Skip"}
+          ${index === QUESTIONS.length - 1 ? "Finish" : answered ? "Next" : "Skip"}
         </button>
       </div>
     </div>
