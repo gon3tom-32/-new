@@ -429,8 +429,22 @@ create table if not exists public.twelve_chat_messages (
   group_id uuid not null references public.twelve_groups (id) on delete cascade,
   season int not null default public.twelve_current_season(),
   user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
-  body text not null check (char_length(btrim(body)) between 1 and 1000),
-  created_at timestamptz not null default now()
+  body text not null default '',
+  -- Optional photo: <group id>/<season>/chat/<user id>/<file> in twelve-photos.
+  image_path text,
+  created_at timestamptz not null default now(),
+  constraint twelve_chat_messages_content_check check (
+    char_length(body) <= 1000 and (char_length(btrim(body)) >= 1 or image_path is not null)
+  )
+);
+
+-- Photo messages (added later): a message can be a photo, with or without text.
+alter table public.twelve_chat_messages add column if not exists image_path text;
+alter table public.twelve_chat_messages alter column body set default '';
+alter table public.twelve_chat_messages drop constraint if exists twelve_chat_messages_body_check;
+alter table public.twelve_chat_messages drop constraint if exists twelve_chat_messages_content_check;
+alter table public.twelve_chat_messages add constraint twelve_chat_messages_content_check check (
+  char_length(body) <= 1000 and (char_length(btrim(body)) >= 1 or image_path is not null)
 );
 
 create index if not exists twelve_chat_group_idx
@@ -454,6 +468,11 @@ create policy "Members post in their group chat"
     user_id = (select auth.uid())
     and season = public.twelve_current_season()
     and public.twelve_is_member(group_id)
+    -- A photo must be one you uploaded to this group's chat folder.
+    and (image_path is null or (
+      image_path like group_id::text || '/' || season::text || '/chat/' || (select auth.uid())::text || '/%'
+      and image_path !~ '\.\.'
+    ))
   );
 
 -- Emoji reactions on chat messages: one per person per message, from a
@@ -2131,6 +2150,8 @@ grant execute on function public.twelve_run_scheduled() to service_role;
 --    twelve-photos (private): <group id>/<season>/<day>/<user id>/<file>
 --    Game photos are visible to their owner right away, and to the rest of
 --    the group once that day closes.
+--    Chat photos use "chat" in place of the day and are visible to the group
+--    right away.
 -- ---------------------------------------------------------------------------
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
@@ -2154,13 +2175,16 @@ declare
   v_group uuid;
 begin
   if array_length(v_parts, 1) <> 5 or v_parts[1] !~ '^[0-9a-f-]{36}$'
-     or v_parts[2] !~ '^\d{4}$' or v_parts[3] !~ '^\d{1,2}$' then
+     or v_parts[2] !~ '^\d{4}$' or v_parts[3] !~ '^(\d{1,2}|chat)$' then
     return false;
   end if;
   if v_parts[4] = (select auth.uid())::text then
     return true;
   end if;
   v_group := v_parts[1]::uuid;
+  if v_parts[3] = 'chat' then
+    return public.twelve_is_member(v_group) and v_parts[2]::int = public.twelve_current_season();
+  end if;
   return public.twelve_is_member(v_group)
     and v_parts[2]::int = public.twelve_current_season()
     and coalesce(public.twelve_day_close(v_group, v_parts[2]::int, v_parts[3]::int) <= now(), false);

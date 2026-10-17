@@ -1,8 +1,8 @@
 // One shared chat per group. Only this season's messages show.
 import { html, useState, useEffect, useRef, useCallback } from "../vendor/preact-htm.mjs";
-import { sb, q, currentSeason } from "../lib/db.js";
+import { sb, q, currentSeason, uploadChatPhoto, signedUrls } from "../lib/db.js";
 import { useApp, useGroup } from "../lib/state.js";
-import { Avatar, ErrorNote, Spinner, useAction, formatTime } from "../lib/ui.js";
+import { Avatar, ErrorNote, Spinner, useAction, formatTime, Icons } from "../lib/ui.js";
 import { play } from "../lib/sound.js";
 
 const PAGE = 100;
@@ -30,6 +30,22 @@ function Reactions({ mine, byUser, profiles, onPick }) {
   </div>`;
 }
 
+// Full-screen photo, with the reaction buttons along the bottom.
+function PhotoViewer({ url, mine, onReact, onClose }) {
+  useEffect(() => {
+    const onKey = (e) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+  return html`<div class="photo-viewer" role="dialog" aria-modal="true" aria-label="Photo" onClick=${(e) => e.target === e.currentTarget && onClose()}>
+    <button class="photo-viewer-close" aria-label="Close photo" onClick=${onClose}>✕</button>
+    <img src=${url} alt="Photo from the chat" />
+    ${onReact && html`<div class="reaction-picker viewer" role="toolbar" aria-label="React to this photo">
+      ${REACTIONS.map((e) => html`<button class=${mine === e ? "on" : ""} aria-label=${`React with ${e}`} onClick=${() => onReact(e)}>${e}</button>`)}
+    </div>`}
+  </div>`;
+}
+
 export function Chat() {
   const g = useGroup();
   const { user } = useApp();
@@ -40,6 +56,11 @@ export function Chat() {
   const [picker, setPicker] = useState(null);
   const [error, setError] = useState(null);
   const [text, setText] = useState("");
+  // The photo picked for the next message, and its preview link.
+  const [photo, setPhoto] = useState(null);
+  const [photoUrls, setPhotoUrls] = useState({});
+  const [viewing, setViewing] = useState(null);
+  const fileInput = useRef(null);
   const bottom = useRef(null);
   const oldestId = useRef(null);
 
@@ -89,6 +110,13 @@ export function Chat() {
     if (el && el.getBoundingClientRect().bottom > window.innerHeight) el.scrollIntoView({ block: "end" });
   }, [messages?.length]);
 
+  // Fetch viewing links for any photos we haven't seen yet.
+  useEffect(() => {
+    const missing = (messages || []).map((m) => m.image_path).filter((p) => p && !photoUrls[p]);
+    if (!missing.length) return;
+    signedUrls(missing).then((urls) => setPhotoUrls((all) => ({ ...all, ...urls }))).catch(() => {});
+  }, [messages]);
+
   // Close the emoji picker when tapping anywhere else.
   useEffect(() => {
     if (picker == null) return;
@@ -99,10 +127,25 @@ export function Chat() {
 
   const send = useAction(async () => {
     const body = text.trim();
-    const row = await q(sb.from("twelve_chat_messages").insert({ group_id: g.groupId, body }).select().single());
+    const row = { group_id: g.groupId, body };
+    if (photo) {
+      row.image_path = await uploadChatPhoto(g.groupId, user.id, photo.file);
+      setPhotoUrls((all) => ({ ...all, [row.image_path]: photo.preview }));
+    }
+    const saved = await q(sb.from("twelve_chat_messages").insert(row).select().single());
     setText("");
-    setMessages((list) => (list.some((m) => m.id === row.id) ? list : [...list, row]));
+    setPhoto(null);
+    setMessages((list) => (list.some((m) => m.id === saved.id) ? list : [...list, saved]));
   });
+  const canSend = Boolean(text.trim() || photo) && !send.busy;
+
+  const pickPhoto = (e) => {
+    const file = e.currentTarget.files?.[0];
+    e.currentTarget.value = "";
+    if (!file) return;
+    if (photo) URL.revokeObjectURL(photo.preview);
+    setPhoto({ file, preview: URL.createObjectURL(file) });
+  };
 
   // Tap the same emoji to remove yours; a different one replaces it.
   const react = async (messageId, emoji) => {
@@ -143,9 +186,13 @@ export function Chat() {
               ${REACTIONS.map((e) => html`<button class=${byUser?.[user.id] === e ? "on" : ""} aria-label=${`React with ${e}`}
                 onClick=${() => react(m.id, e)}>${e}</button>`)}
             </div>`}
-            <div class="bubble" role=${reactionsOn ? "button" : null} tabindex=${reactionsOn ? 0 : null}
+            ${m.image_path && html`<button class="chat-photo" aria-label=${`Photo from ${mine ? "you" : profile.display_name}. Tap to view.`}
+              onClick=${() => photoUrls[m.image_path] && setViewing(m.id)}>
+              ${photoUrls[m.image_path] ? html`<img src=${photoUrls[m.image_path]} alt="" />` : html`<span class="chat-photo-wait">📷</span>`}
+            </button>`}
+            ${m.body && html`<div class="bubble" role=${reactionsOn ? "button" : null} tabindex=${reactionsOn ? 0 : null}
               onClick=${() => reactionsOn && setPicker(picker === m.id ? null : m.id)}
-              onKeyDown=${(e) => reactionsOn && (e.key === "Enter" || e.key === " ") && (e.preventDefault(), setPicker(picker === m.id ? null : m.id))}>${m.body}</div>
+              onKeyDown=${(e) => reactionsOn && (e.key === "Enter" || e.key === " ") && (e.preventDefault(), setPicker(picker === m.id ? null : m.id))}>${m.body}</div>`}
             <${Reactions} mine=${byUser?.[user.id]} byUser=${byUser} profiles=${g.profiles} onPick=${(e) => react(m.id, e)} />
             ${messages[i + 1]?.user_id !== m.user_id && html`<div class="when">${formatTime(m.created_at)}</div>`}
           </div>
@@ -155,12 +202,27 @@ export function Chat() {
     <${ErrorNote} error=${send.error} />
     <div class="chat-pad with-tabs" ref=${bottom}></div>
     <div class="composer">
-      <form onSubmit=${(e) => { e.preventDefault(); if (text.trim()) send.run(); }}>
-        <textarea rows="1" maxlength="1000" placeholder="Message the group…" value=${text} aria-label="Message"
+      ${photo && html`<div class="composer-photo">
+        <img src=${photo.preview} alt="Photo to send" />
+        <span class="small muted grow">${send.busy ? "Sending photo…" : "Add a caption, or just send."}</span>
+        <button type="button" class="btn ghost small" disabled=${send.busy} aria-label="Remove photo"
+          onClick=${() => { URL.revokeObjectURL(photo.preview); setPhoto(null); }}>✕</button>
+      </div>`}
+      <form onSubmit=${(e) => { e.preventDefault(); if (canSend) send.run(); }}>
+        <input ref=${fileInput} type="file" accept="image/*" hidden onChange=${pickPhoto} />
+        <button type="button" class="composer-attach" aria-label="Add a photo" disabled=${send.busy}
+          onClick=${() => fileInput.current?.click()}>${Icons.camera()}</button>
+        <textarea rows="1" maxlength="1000" placeholder=${photo ? "Add a caption…" : "Message the group…"} value=${text} aria-label="Message"
           onInput=${(e) => setText(e.currentTarget.value)}
-          onKeyDown=${(e) => { if (e.key === "Enter" && !e.shiftKey && !("ontouchstart" in window)) { e.preventDefault(); if (text.trim()) send.run(); } }}></textarea>
-        <button class="btn" disabled=${!text.trim() || send.busy}>Send</button>
+          onKeyDown=${(e) => { if (e.key === "Enter" && !e.shiftKey && !("ontouchstart" in window)) { e.preventDefault(); if (canSend) send.run(); } }}></textarea>
+        <button class="btn" disabled=${!canSend}>${send.busy && photo ? "…" : "Send"}</button>
       </form>
     </div>
+    ${viewing != null && (() => {
+      const m = messages.find((x) => x.id === viewing);
+      if (!m) return null;
+      return html`<${PhotoViewer} url=${photoUrls[m.image_path]} mine=${reactions[m.id]?.[user.id]}
+        onReact=${reactionsOn ? (e) => react(m.id, e) : null} onClose=${() => setViewing(null)} />`;
+    })()}
   </main>`;
 }
