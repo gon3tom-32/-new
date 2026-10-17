@@ -35,14 +35,19 @@ Both are safe to run again. Run them again whenever they change.
 ### 2. Sign-in (required)
 
 - **Authentication → URL Configuration → Redirect URLs:** add `https://gon3tom-32.github.io/-new/twelve/`.
-- **Authentication → Emails → Magic Link** and **Confirm signup** (first-time sign-ins use the second one): add the code to both emails so people can type it in. This matters on iPhone, where a link in an email opens Safari instead of the installed app. For example:
+- **Authentication → Emails:** sign-in is by 6-digit code (the email's link still works as a backup on the same device). Editing the email templates needs custom SMTP (below). In both **Magic link or OTP** and **Confirm sign up**, set:
+  - Subject: `Your Twelve code: {{ .Token }}`
+  - Body:
 
-  ```html
-  <h2>Your Twelve sign-in</h2>
-  <p><a href="{{ .ConfirmationURL }}">Tap here to sign in</a></p>
-  <p>Or enter this code in the app: <strong>{{ .Token }}</strong></p>
-  ```
+    ```html
+    <h2>Your Twelve sign-in code</h2>
+    <p style="font-size:32px;font-weight:bold;letter-spacing:6px">{{ .Token }}</p>
+    <p>Type this code into Twelve. It works for one hour.</p>
+    <p>Or <a href="{{ .ConfirmationURL }}">tap here to sign in</a> on this device.</p>
+    ```
 
+  Putting the code in the subject means it shows in the phone's notification, so people often don't need to open the email.
+- **Authentication → Providers → Email:** keep **Email OTP Length** at 6. The app signs in automatically when the sixth digit is typed.
 - Supabase's built-in email only sends a few messages an hour. Before a real group signs up, set up your own email provider under **Authentication → Emails → SMTP Settings**.
 
 ### 3. Reminders (recommended)

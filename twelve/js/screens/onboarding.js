@@ -173,59 +173,117 @@ export function CodeEntry({ code: initial = "" }) {
 
 // ---------- Sign in (email magic link + 6-digit code) ----------
 
+const RESEND_WAIT = 60; // seconds; Supabase allows one email per minute per address
+
+function signInError(error) {
+  const message = error?.message || "";
+  if (/rate limit/i.test(message)) return new Error("Too many sign-in emails were sent just now. Please wait a few minutes and try again.");
+  if (/only request this after (\d+) seconds?/i.test(message)) {
+    return new Error(`Please wait ${message.match(/after (\d+) seconds?/i)[1]} seconds before asking for another code.`);
+  }
+  if (/invalid.*email|email.*invalid/i.test(message)) return new Error("That email address doesn't look right. Check it and try again.");
+  return friendly(error);
+}
+
 export function SignIn() {
   const app = useApp();
-  const [email, setEmail] = useState(storage.get("email", ""));
-  const [sent, setSent] = useState(false);
+  // Remember a code that's on its way, so switching to the Mail app (which
+  // can reload Twelve on a phone) brings you straight back to the code box.
+  const pending = storage.get("signinPending");
+  const [email, setEmail] = useState(pending?.email || storage.get("email", ""));
+  const [sentAt, setSentAt] = useState(pending?.sentAt || null);
   const [token, setToken] = useState("");
+  const [now, setNow] = useState(Date.now());
 
   // Once signed in (and their profile and groups have loaded), move on.
   useEffect(() => {
-    if (app.user && !app.loading) continueOnboarding(app);
+    if (app.user && !app.loading) {
+      storage.set("signinPending", null);
+      continueOnboarding(app);
+    }
   }, [app.user, app.loading]);
 
+  // Tick the resend countdown.
+  useEffect(() => {
+    if (!sentAt) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [sentAt]);
+
   const send = useAction(async () => {
-    storage.set("email", email.trim());
+    const address = email.trim().toLowerCase();
+    storage.set("email", address);
     const { error } = await sb.auth.signInWithOtp({
-      email: email.trim(),
+      email: address,
       options: { emailRedirectTo: location.origin + location.pathname, shouldCreateUser: true },
     });
-    if (error) throw friendly(error);
-    setSent(true);
-  });
-  const verify = useAction(async () => {
-    const { error } = await sb.auth.verifyOtp({ email: email.trim(), token: token.trim(), type: "email" });
-    if (error) throw new Error("That code didn't work. Check it, or send a new one.");
+    if (error) throw signInError(error);
+    const at = Date.now();
+    setEmail(address);
+    setSentAt(at);
+    setNow(at);
+    setToken("");
+    storage.set("signinPending", { email: address, sentAt: at });
   });
 
-  if (sent) {
-    return html`<${PanelPage} title="Check your email 📬" subtitle=${`We sent a sign-in link to ${email}.`}>
-      <div class="stack-lg">
-        <p>Tap the link in the email to sign in. Or, if the email shows a code, type it here — handy if the link opens in a different browser.</p>
-        <form class="stack" onSubmit=${(e) => { e.preventDefault(); verify.run(); }}>
-          <input class="input code" inputmode="numeric" autocomplete="one-time-code" placeholder="123456"
-            value=${token} onInput=${(e) => setToken(e.currentTarget.value.replace(/\D/g, "").slice(0, 10))} aria-label="Code from the email" />
-          <${ErrorNote} error=${verify.error} />
-          <button class="btn block" disabled=${token.length < 6 || verify.busy}>${verify.busy ? "Signing in…" : "Sign in with code"}</button>
-        </form>
+  const verify = useAction(async (code) => {
+    const { error } = await sb.auth.verifyOtp({ email: email.trim().toLowerCase(), token: code, type: "email" });
+    if (error) {
+      setToken("");
+      // Supabase gives the same answer for a mistyped code and an expired one.
+      throw new Error("That code didn't work. Check the numbers, or tap Resend code if it's more than an hour old.");
+    }
+  });
+
+  const changeEmail = () => {
+    storage.set("signinPending", null);
+    setSentAt(null);
+    setToken("");
+  };
+
+  if (sentAt) {
+    const wait = Math.max(0, RESEND_WAIT - Math.floor((now - sentAt) / 1000));
+    const onCode = (value) => {
+      const digits = value.replace(/\D/g, "").slice(0, 10);
+      setToken(digits);
+      // Codes are 6 digits: sign in as soon as the last one is typed or pasted.
+      if (digits.length === 6 && !verify.busy) verify.run(digits);
+    };
+    return html`<${PanelPage} title="Enter your code 📬" subtitle=${`We emailed a 6-digit code to ${email}.`}>
+      <form class="stack-lg" onSubmit=${(e) => { e.preventDefault(); if (token.length >= 6) verify.run(token); }}>
+        <div class="field">
+          <label for="otp" class="sr-only">6-digit code</label>
+          <input id="otp" class="input code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*"
+            placeholder="••••••" autofocus value=${token} disabled=${verify.busy}
+            onInput=${(e) => onCode(e.currentTarget.value)} aria-label="6-digit code from the email" />
+        </div>
+        <${ErrorNote} error=${verify.error || send.error} />
+        <button class="btn block" disabled=${token.length < 6 || verify.busy}>${verify.busy ? "Signing in…" : "Sign in"}</button>
+        <div class="row" style="justify-content:center;gap:16px">
+          <button type="button" class="link-btn" disabled=${wait > 0 || send.busy} onClick=${() => send.run()}
+            style=${wait > 0 ? "color:var(--ink-soft);text-decoration:none" : ""}>
+            ${send.busy ? "Sending…" : wait > 0 ? `Resend code in ${wait}s` : "Resend code"}
+          </button>
+          <button type="button" class="link-btn" onClick=${changeEmail}>Change email</button>
+        </div>
         <p class="center small muted">
-          Nothing yet? Check spam, or${" "}
-          <button class="link-btn" onClick=${() => { setSent(false); setToken(""); }}>use a different email</button>
+          Can't find it? Check your spam folder. The email also has a sign-in link, which works if you open it on this same device.
         </p>
-      </div>
+      </form>
     <//>`;
   }
 
   const joining = storage.get("pendingCode") || storage.get("pendingCreate");
-  return html`<${PanelPage} back=${joining ? "#/code" : "#/welcome"} title="What's your email?" subtitle="No passwords. We'll email you a link to sign in.">
+  return html`<${PanelPage} back=${joining ? "#/code" : "#/welcome"} title="Sign in with your email"
+    subtitle="No passwords. We'll email you a 6-digit code.">
     <form class="stack-lg" onSubmit=${(e) => { e.preventDefault(); send.run(); }}>
       <div class="field">
         <label for="email">Email</label>
-        <input id="email" class="input" type="email" autocomplete="email" required placeholder="you@example.com"
-          value=${email} onInput=${(e) => setEmail(e.currentTarget.value)} />
+        <input id="email" class="input" type="email" autocomplete="email" autocapitalize="off" spellcheck="false" required
+          placeholder="you@example.com" value=${email} onInput=${(e) => setEmail(e.currentTarget.value)} />
       </div>
       <${ErrorNote} error=${send.error} />
-      <button class="btn block" disabled=${!email.includes("@") || send.busy}>${send.busy ? "Sending…" : "Email me a link"}</button>
+      <button class="btn block" disabled=${!/^\S+@\S+\.\S+$/.test(email.trim()) || send.busy}>${send.busy ? "Sending…" : "Send my code"}</button>
     </form>
   <//>`;
 }
