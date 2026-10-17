@@ -888,6 +888,56 @@ $$;
 revoke all on function public.twelve_draw_names(uuid) from public;
 grant execute on function public.twelve_draw_names(uuid) to authenticated;
 
+-- Undo this year's draw so the host can draw again. Deletes the matches,
+-- the anonymous chat, "bought" checkmarks, and the "your match is ready"
+-- notifications. Keeps who's in the exchange, couples, budget, date, and
+-- everyone's questionnaire answers.
+create or replace function public.twelve_reset_draw(p_group uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_season int := public.twelve_current_season();
+begin
+  if not public.twelve_is_host(p_group) then
+    raise exception 'Only the host can reset the Secret Santa.';
+  end if;
+
+  perform 1 from public.twelve_gift_seasons
+  where group_id = p_group and season = v_season
+  for update;
+  if not exists (
+    select 1 from public.twelve_gift_seasons
+    where group_id = p_group and season = v_season and drawn_at is not null
+  ) then
+    raise exception 'Names haven''t been drawn yet, so there''s nothing to reset.';
+  end if;
+
+  delete from public.twelve_anon_messages where group_id = p_group and season = v_season;
+  delete from public.twelve_matches where group_id = p_group and season = v_season;
+  update public.twelve_gift_seasons set drawn_at = null
+  where group_id = p_group and season = v_season;
+
+  -- Old "your match is ready" and anonymous-message alerts would now point nowhere.
+  delete from public.twelve_notifications
+  where group_id = p_group
+    and (title = 'Your match is ready 🎁' or url like '%/gifts/santa%' or url like '%/gifts/ask%');
+
+  insert into public.twelve_notifications (user_id, group_id, title, body, url)
+  select gp.user_id, p_group, 'Secret Santa was reset 🔄',
+    'The host reset the draw in ' || g.name || '. Names will be drawn again soon. Your questionnaire answers are saved.',
+    '#/g/' || p_group || '/gifts'
+  from public.twelve_gift_participants gp
+  join public.twelve_groups g on g.id = gp.group_id
+  where gp.group_id = p_group and gp.season = v_season;
+end;
+$$;
+
+revoke all on function public.twelve_reset_draw(uuid) from public;
+grant execute on function public.twelve_reset_draw(uuid) to authenticated;
+
 -- Send a message in the anonymous chat. A giver writes to their recipient;
 -- a recipient writes back to their (unknown) giver.
 create or replace function public.twelve_send_anon(p_group uuid, p_as_giver boolean, p_body text)
