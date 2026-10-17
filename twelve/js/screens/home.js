@@ -1,9 +1,10 @@
-// Group hub: today's game up front, then the calendar, gift exchange status,
+// Group hub: today's game up front, then the advent calendar, gift exchange status,
 // and who's in the group.
 import { html } from "../vendor/preact-htm.mjs";
-import { useApp, useGroup, currentDay, dayState } from "../lib/state.js";
+import { useApp, useGroup, currentDay } from "../lib/state.js";
 import { Avatar, Countdown, useNow, timeLeft, formatDate, daysUntil, shareInvite, Icons } from "../lib/ui.js";
 import { formatEmoji } from "../lib/formats.js";
+import { AdventCalendar } from "../lib/advent.js";
 
 function TodayHero() {
   const g = useGroup();
@@ -58,19 +59,8 @@ function Calendar() {
   const now = useNow(60000);
   if (!g.schedule?.days?.length) return null;
   return html`<section class="stack">
-    <div class="section-label">The calendar</div>
-    <div class="calendar">
-      ${g.schedule.days.map((d) => {
-        const state = dayState(d, now);
-        const cls = state === "locked" ? "locked" : d.played ? "done" : state === "open" ? "open" : "";
-        const label = state === "locked" ? formatDate(d.unlocks_at, { month: "short", day: "numeric" }) : d.title.replace(/: Round Two$/, " II");
-        return html`<a class=${"cal-day " + cls} href=${`#/g/${g.groupId}/day/${d.day}`} aria-label=${`Day ${d.day}: ${state === "locked" ? "locked" : d.title}`}>
-          ${d.played && html`<span class="check" aria-hidden="true">✓</span>`}
-          <span class="n">${state === "locked" ? d.day : formatEmoji(d.format)}</span>
-          <span class="t">${state === "locked" ? label : `Day ${d.day}`}</span>
-        </a>`;
-      })}
-    </div>
+    <div class="section-label">Your 12 days</div>
+    <${AdventCalendar} groupId=${g.groupId} days=${g.schedule.days} now=${now} />
   </section>`;
 }
 
@@ -136,8 +126,8 @@ export function Home() {
   const g = useGroup();
   return html`<main class="page stack-lg">
     ${g.group.games_enabled && html`<${TodayHero} />`}
-    ${g.group.gifts_enabled && html`<${GiftStatus} />`}
     ${g.group.games_enabled && html`<${Calendar} />`}
+    ${g.group.gifts_enabled && html`<${GiftStatus} />`}
     <${Roster} />
   </main>`;
 }
