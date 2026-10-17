@@ -14,7 +14,7 @@ export const needsInstallForPush = () =>
 export async function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return null;
   try {
-    return await navigator.serviceWorker.register("sw.js");
+    return await navigator.serviceWorker.register("sw.js?v=" + (window.TWELVE_VERSION || "0"));
   } catch {
     return null;
   }
