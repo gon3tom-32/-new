@@ -367,22 +367,70 @@ p { margin: 0; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ---------- Calendar ---------- */
-.calendar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-.cal-day {
-  aspect-ratio: 1; border-radius: 16px; text-decoration: none; color: inherit;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  background: var(--surface); border: 1px solid var(--line);
-  font-family: var(--display); font-weight: 800; position: relative;
+/* ---------- Advent calendar ---------- */
+/* The full-width wrapper keeps a column-flex parent from measuring the doors at
+   the wrong width (they're sized by percentage) and underestimating their height. */
+.advent-wrap { width: 100%; }
+.advent { display: flex; flex-wrap: wrap; gap: 14px; }
+.advent > .door { flex: 0 0 calc((100% - 28px) / 3); }
+@media (min-width: 600px) { .advent > .door { flex-basis: calc((100% - 42px) / 4); } }
+.door {
+  position: relative; display: block; padding: 0; border: 0; background: none;
+  cursor: pointer; border-radius: 16px; perspective: 900px; color: var(--ink); font: inherit;
 }
-.cal-day .n { font-size: 1.5rem; line-height: 1; }
-.cal-day .t { font-family: var(--body); font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); text-align: center; padding: 0 4px; }
-.cal-day.open { background: var(--red); color: #fff; border-color: var(--red); }
-.cal-day.open .t { color: rgba(255, 255, 255, 0.85); }
-.cal-day.done { background: var(--green); color: #fff; border-color: var(--green); }
-.cal-day.done .t { color: rgba(255, 255, 255, 0.85); }
-.cal-day.locked { opacity: 0.55; }
-.cal-day .check { position: absolute; top: 4px; right: 6px; font-size: 0.8rem; }
+/* Sizes the door 4:5. */
+.door::before { content: ""; display: block; padding-top: 125%; }
+.door:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+.door-inside {
+  position: absolute; inset: 0; border-radius: 16px; padding: 6px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-align: center;
+  background: var(--surface); border: 2px solid var(--line);
+  box-shadow: inset 0 6px 14px -8px rgba(35, 18, 26, 0.35);
+}
+.door-emoji { font-size: 2rem; line-height: 1; }
+.door-day { font-family: var(--display); font-weight: 800; font-size: 0.9rem; }
+.door-status { font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 999px; }
+.door-status.play { background: var(--red); color: #fff; }
+.door-status.done { background: color-mix(in srgb, var(--green) 18%, var(--surface)); color: var(--green-deep); }
+.door-status.missed { color: var(--ink-soft); }
+.door.faded .door-inside { opacity: 0.6; }
+@media (prefers-color-scheme: dark) { .door-status.done { color: #7ff0b6; } }
+.door-front {
+  position: absolute; inset: 0; border-radius: 16px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  color: #fff; transform-origin: left center; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+  transition: transform 0.7s cubic-bezier(0.35, 0.1, 0.25, 1), opacity 0.7s;
+  background: var(--red);
+  box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.14), inset 0 0 0 7px rgba(0, 0, 0, 0.08), 0 4px 0 var(--red-deep);
+}
+.door.green .door-front { background: var(--green); box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.14), inset 0 0 0 7px rgba(0, 0, 0, 0.08), 0 4px 0 var(--green-deep); }
+.door.gold .door-front { background: var(--gold); color: #3a2300; box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.3), inset 0 0 0 7px rgba(0, 0, 0, 0.06), 0 4px 0 #c98a00; }
+.door-num { font-family: var(--display); font-weight: 800; font-size: 2.6rem; line-height: 1; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.15); }
+.door-date { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.9; }
+.door-knob {
+  position: absolute; right: 12px; top: 50%; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%;
+  background: var(--gold-soft); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+}
+.door.gold .door-knob { background: #fff4c7; }
+.door.is-open .door-front { transform: rotateY(-105deg); opacity: 0; pointer-events: none; }
+.door.ready .door-front { animation: door-glow 1.6s ease-in-out infinite; }
+.door.shake { animation: door-shake 0.45s; }
+@keyframes door-glow {
+  0%, 100% { filter: none; transform: scale(1); }
+  50% { filter: drop-shadow(0 0 10px var(--gold)) drop-shadow(0 0 4px var(--gold)); transform: scale(1.04); }
+}
+@keyframes door-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px) rotate(-2deg); }
+  40% { transform: translateX(5px) rotate(2deg); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .door-front { transition: none; }
+  .door.ready .door-front, .door.shake { animation: none; }
+  .door.ready .door-front { outline: 3px solid var(--gold); outline-offset: 2px; }
+}
 
 /* ---------- Games ---------- */
 .choices { display: flex; flex-direction: column; gap: 10px; }
