@@ -91,7 +91,7 @@ function QuestionnaireCard() {
       <h3>${done ? "Your questionnaire ✓" : "Tell your Secret Santa about you"}</h3>
       <span class=${"pill " + (done ? "green" : "red")}>${done ? "Done" : `${answered} of ${QUESTIONS.length}`}</span>
     </div>
-    <p class="muted">${done ? "Your Secret Santa sees these answers. You can change them any time." : "Nine quick questions instead of a wish list. Only the person who draws your name sees them."}</p>
+    <p class="muted">${done ? "Your Secret Santa sees these answers. You can change them any time." : "Nine quick questions instead of a wish list. Only the person who draws your name sees them. (If they ask for AI gift ideas, your answers, never your name, go to Google's AI.)"}</p>
     <a class=${"btn " + (done ? "ghost" : "green")} href=${`#/g/${g.groupId}/gifts/questions`}>${label}</a>
   </section>`;
 }
@@ -286,6 +286,42 @@ function ScratchCard({ recipient, onRevealed }) {
   </div>`;
 }
 
+// AI gift ideas from the giftee's questionnaire answers (twelve-gift-ideas
+// Edge Function, Google Gemini free tier). Only the answers and the budget
+// are sent, never names.
+function GiftIdeas({ groupId, name }) {
+  const [ideas, setIdeas] = useState(null);
+  const get = useAction(async () => {
+    const { data, error } = await sb.functions.invoke("twelve-gift-ideas", { body: { group_id: groupId } });
+    if (error) {
+      let message = null;
+      try {
+        message = (await error.context.json()).error;
+      } catch {
+        /* not our JSON */
+      }
+      if (!message && error.context?.status === 404) message = "Gift ideas aren't switched on yet.";
+      throw new Error(message || "Couldn't get gift ideas right now. Try again in a moment.");
+    }
+    setIdeas(data.ideas);
+  });
+  return html`<div class="stack" style="border-top:1px solid var(--line);padding-top:14px">
+    <div class="section-label">✨ Gift ideas</div>
+    ${!ideas && html`<p class="small muted">Stuck? AI can suggest gifts based on ${name}'s answers and the budget.</p>`}
+    ${ideas && html`<div class="stack" style="gap:8px">
+      ${ideas.map((i) => html`<div class="idea">
+        <div class="row between" style="align-items:flex-start"><b>${i.idea}</b>${i.price && html`<span class="pill gold">${i.price}</span>`}</div>
+        ${i.why && html`<div class="small muted">${i.why}</div>`}
+      </div>`)}
+    </div>`}
+    <${ErrorNote} error=${get.error} />
+    <button class="btn gold block" disabled=${get.busy} onClick=${get.run}>
+      ${get.busy ? "Thinking…" : ideas ? "✨ Different ideas" : "✨ Suggest gift ideas"}
+    </button>
+    <p class="small muted center">Ideas come from Google's Gemini AI. Only ${name}'s answers and the budget are shared, never names.</p>
+  </div>`;
+}
+
 function MyMatch() {
   const g = useGroup();
   const match = g.gift.match;
@@ -337,6 +373,7 @@ function MyMatch() {
         <div class="a">${list[i]}</div>
       </div>`)}
     </div>
+    ${list.some((a) => a?.trim()) && html`<${GiftIdeas} groupId=${g.groupId} name=${recipient.display_name} />`}
     <a class="btn ghost block" href=${`#/g/${g.groupId}/gifts/ask`}>🤫 Ask ${recipient.display_name} anonymously</a>
   </section>`;
 }

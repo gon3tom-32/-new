@@ -61,6 +61,20 @@ Reminders always show up under the bell in the app. To also send them to phones:
 
 People then turn on notifications from the bell → **Push notifications → Turn on**. On iPhone this only works after adding Twelve to the Home Screen (iOS 16.4 or later).
 
+### 5. AI gift ideas (optional, free)
+
+Givers get a **Suggest gift ideas** button under their giftee's answers. It uses Google's Gemini API on its free tier.
+
+1. Create a free API key in [Google AI Studio](https://aistudio.google.com) (**Get API key → Create API key**).
+2. In Supabase, open **Edge Functions → Secrets** and add `GEMINI_API_KEY` with that key.
+3. Open **Edge Functions → Deploy a new function → Via Editor**, name it `twelve-gift-ideas`, replace the sample code with [`supabase/functions/twelve-gift-ideas/index.ts`](../supabase/functions/twelve-gift-ideas/index.ts), and deploy. Leave JWT verification on.
+4. Run `supabase/twelve.sql` again, which adds the daily allowance.
+
+What to know:
+- On Google's free tier, Google may use what's sent to improve its products. Only the giftee's questionnaire answers and the budget are sent, never names or emails, and the questionnaire tells people this.
+- Each person gets 8 suggestions a day, so a group stays well inside the free limits.
+- Google renames models often. The function tries a short list of current low-cost models in order. To pick your own, add a `GEMINI_MODELS` secret, for example `gemini-3.5-flash-lite,gemini-2.5-flash`.
+
 ## How it works
 
 ### Groups

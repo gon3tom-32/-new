@@ -2171,6 +2171,48 @@ create policy "twelve: see game photos"
   using (bucket_id = 'twelve-photos' and public.twelve_can_read_photo(name));
 
 -- ---------------------------------------------------------------------------
+-- 9b. AI gift ideas: a small daily allowance per person, so the whole group
+--     stays well inside the AI provider's free quota. The twelve-gift-ideas
+--     Edge Function takes one use per request.
+-- ---------------------------------------------------------------------------
+
+create table if not exists public.twelve_ai_usage (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  day date not null,
+  uses int not null default 0,
+  primary key (user_id, day)
+);
+
+alter table public.twelve_ai_usage enable row level security;
+-- No policies and no grants: only the function below touches it.
+revoke all on public.twelve_ai_usage from anon, authenticated;
+
+create or replace function public.twelve_take_ai_quota()
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_uses int;
+begin
+  if (select auth.uid()) is null then
+    return false;
+  end if;
+  insert into public.twelve_ai_usage (user_id, day, uses)
+  values ((select auth.uid()), (now() at time zone 'UTC')::date, 1)
+  on conflict (user_id, day) do update
+    set uses = public.twelve_ai_usage.uses + 1
+    where public.twelve_ai_usage.uses < 8
+  returning uses into v_uses;
+  return v_uses is not null;
+end;
+$$;
+
+revoke all on function public.twelve_take_ai_quota() from public, anon;
+grant execute on function public.twelve_take_ai_quota() to authenticated;
+
+-- ---------------------------------------------------------------------------
 -- 10. Live updates for the group chat, its reactions, and the notification bell.
 -- ---------------------------------------------------------------------------
 
