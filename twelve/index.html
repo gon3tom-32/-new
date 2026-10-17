@@ -16,7 +16,52 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap">
-  <link rel="stylesheet" href="css/app.css">
+  <script>
+    // The app's version. Bump it whenever anything in twelve/ changes.
+    // Every app file loads with ?v=<version>, so after an update a phone can
+    // never mix new files with old cached ones. sw.js gets it from here too.
+    window.TWELVE_VERSION = "6";
+
+    (function (v) {
+      // Every JavaScript module the app imports (paths inside js/). A file
+      // missing from this list still works; it just isn't refreshed by
+      // version bumps.
+      var modules = [
+        "config.js",
+        "games/bingo.js",
+        "games/day.js",
+        "games/photo.js",
+        "games/quiz.js",
+        "games/scavenger.js",
+        "games/speedmatch.js",
+        "games/wyr.js",
+        "lib/db.js",
+        "lib/formats.js",
+        "lib/push.js",
+        "lib/state.js",
+        "lib/ui.js",
+        "screens/account.js",
+        "screens/chat.js",
+        "screens/gifts.js",
+        "screens/home.js",
+        "screens/leaderboard.js",
+        "screens/onboarding.js",
+        "screens/settings.js",
+        "vendor/preact-htm.mjs"
+      ];
+      var imports = {};
+      modules.forEach(function (f) { imports["./js/" + f] = "./js/" + f + "?v=" + v; });
+      var map = document.createElement("script");
+      map.type = "importmap";
+      map.textContent = JSON.stringify({ imports: imports });
+      document.head.appendChild(map);
+
+      var css = document.createElement("link");
+      css.rel = "stylesheet";
+      css.href = "css/app.css?v=" + v;
+      document.head.appendChild(css);
+    })(window.TWELVE_VERSION);
+  </script>
 </head>
 <body>
   <div id="app">
@@ -24,6 +69,11 @@
   </div>
   <noscript>Twelve needs JavaScript turned on.</noscript>
   <script src="js/vendor/supabase.js"></script>
-  <script type="module" src="js/app.js"></script>
+  <script>
+    var app = document.createElement("script");
+    app.type = "module";
+    app.src = "js/app.js?v=" + window.TWELVE_VERSION;
+    document.body.appendChild(app);
+  </script>
 </body>
 </html>

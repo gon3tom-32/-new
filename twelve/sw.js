@@ -1,17 +1,15 @@
 // Twelve service worker: makes the app installable and quick to open, and
 // shows push notifications.
 //
-// Bump VERSION whenever files change so phones pick up the new version.
-const VERSION = "twelve-v5";
+// The version comes from the ?v= this file is registered with, which is
+// TWELVE_VERSION in index.html. A new version replaces the old cache.
+const VERSION = "twelve-v" + (new URL(self.location.href).searchParams.get("v") || "0");
 const SHELL = [
   "./",
   "index.html",
   "manifest.webmanifest",
-  "css/app.css",
   "icons/icon.svg",
   "icons/icon-192.png",
-  "js/config.js",
-  "js/vendor/preact-htm.mjs",
   "js/vendor/supabase.js",
 ];
 
@@ -37,8 +35,18 @@ self.addEventListener("fetch", (event) => {
   const isFont = url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com";
   if (!sameOrigin && !isFont) return;
 
+  // App files skip the browser's own short-term cache and always check with
+  // the server, so after an update a phone never mixes old code with new
+  // styles. (Navigation requests can't be copied with options, so rebuild
+  // them from the URL.)
+  const fresh = !sameOrigin
+    ? request
+    : request.mode === "navigate"
+      ? new Request(request.url, { cache: "no-cache", credentials: "same-origin" })
+      : new Request(request, { cache: "no-cache" });
+
   event.respondWith(
-    fetch(request)
+    fetch(fresh)
       .then((response) => {
         if (response.ok) {
           const copy = response.clone();

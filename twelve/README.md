@@ -118,4 +118,6 @@ This rewrites `supabase/twelve_content.sql`. Run that file in the SQL Editor aga
 
 ## Updating the app
 
-After changing files in `twelve/`, bump `VERSION` in `twelve/sw.js` so installed copies pick up the update.
+After changing files in `twelve/`, bump `TWELVE_VERSION` near the top of `twelve/index.html` (for example from `"6"` to `"7"`). Every app file loads with that number in its address, so phones fetch the whole new version at once and never mix new files with old cached ones. The service worker takes its version from the same number.
+
+If you add a new JavaScript file under `twelve/js/`, add it to the `modules` list next to `TWELVE_VERSION` too.
