@@ -3,6 +3,7 @@
 import { html, useState, useEffect, useRef } from "../vendor/preact-htm.mjs";
 import { sb, q, rpc, currentSeason } from "../lib/db.js";
 import { useApp, useGroup } from "../lib/state.js";
+import { play } from "../lib/sound.js";
 import { QUESTIONS, QuestionInput, AnswerSummary, countAnswered, isAnswered, normalize } from "../lib/questionnaire.js";
 import { Avatar, ErrorNote, Spinner, useAction, useAsync, Countdown, formatDate, daysUntil, BackLink, toast, formatTime } from "../lib/ui.js";
 
@@ -356,6 +357,7 @@ function MyMatch() {
   });
 
   const markRevealed = async () => {
+    play("reveal");
     setRevealedNow(true);
     await sb.from("twelve_matches").update({ revealed_at: new Date().toISOString() })
       .eq("group_id", g.groupId).eq("season", currentSeason()).eq("giver_id", match.giver_id);
@@ -445,6 +447,7 @@ export function Questionnaire() {
     if (!(await save.run(answers, complete))) return;
     if (last) {
       await g.reload();
+      play("done");
       setFinished(true);
       window.scrollTo(0, 0);
     } else {

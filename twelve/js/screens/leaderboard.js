@@ -1,5 +1,6 @@
 // Daily and overall leaderboards, plus the host-triggered champion reveal.
-import { html, useState } from "../vendor/preact-htm.mjs";
+import { html, useState, useEffect } from "../vendor/preact-htm.mjs";
+import { play } from "../lib/sound.js";
 import { rpc } from "../lib/db.js";
 import { useApp, useGroup } from "../lib/state.js";
 import { Avatar, ErrorNote, Spinner, useAsync, useAction, useNow } from "../lib/ui.js";
@@ -23,6 +24,22 @@ const AWARD_ICONS = {
 
 function ChampionReveal({ data }) {
   const g = useGroup();
+  // The first time each device sees the champion: a drumroll, then the reveal.
+  const seenKey = `twelve.champion.${g.groupId}.${g.schedule?.champion_revealed_at}`;
+  const [suspense, setSuspense] = useState(() => { try { return !localStorage.getItem(seenKey); } catch { return false; } });
+  useEffect(() => {
+    if (!suspense) return;
+    try { localStorage.setItem(seenKey, "1"); } catch { /* private mode */ }
+    play("champion");
+    const timer = setTimeout(() => setSuspense(false), 1700);
+    return () => clearTimeout(timer);
+  }, []);
+  if (suspense) {
+    return html`<section class="champion sprinkles stack-lg" role="status">
+      <div class="crown" aria-hidden="true">🥁</div>
+      <h2>And the champion is…</h2>
+    </section>`;
+  }
   const names = (ids) => ids.map((id) => g.profiles[id]?.display_name || "Someone");
   const champs = data.champions || [];
   return html`<section class="champion sprinkles stack-lg">

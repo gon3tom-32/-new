@@ -4,6 +4,7 @@ import { sb, q } from "../lib/db.js";
 import { useApp, go } from "../lib/state.js";
 import { Avatar, ErrorNote, Spinner, useAsync, useAction, formatTime, Icons } from "../lib/ui.js";
 import { pushStatus, enablePush, disablePush, pushConfigured } from "../lib/push.js";
+import { soundOn, setSoundOn, play } from "../lib/sound.js";
 
 function PushCard() {
   const [status, setStatus] = useState(null);
@@ -31,6 +32,23 @@ function PushCard() {
   </div>`;
 }
 
+function SoundCard() {
+  const [on, setOn] = useState(soundOn());
+  const toggle = () => {
+    setSoundOn(!on);
+    setOn(!on);
+    if (!on) play("pop");
+  };
+  return html`<div class="card row">
+    <div style="font-size:1.8rem" aria-hidden="true">${on ? "🔊" : "🔇"}</div>
+    <div class="grow">
+      <h3>Sounds</h3>
+      <p class="small muted">${on ? "Festive sounds are on for this device." : "Sounds are off for this device."}</p>
+    </div>
+    <button class=${"btn small " + (on ? "ghost" : "green")} onClick=${toggle}>${on ? "Turn off" : "Turn on"}</button>
+  </div>`;
+}
+
 export function Inbox() {
   const { user } = useApp();
   const list = useAsync(
@@ -49,6 +67,7 @@ export function Inbox() {
     <button class="back-link" onClick=${() => history.length > 1 ? history.back() : go("/")}>${Icons.back()} Back</button>
     <h1>Notifications</h1>
     <${PushCard} />
+    <${SoundCard} />
     <${ErrorNote} error=${list.error} retry=${list.reload} />
     ${list.loading && !list.data && html`<${Spinner} />`}
     ${list.data?.length === 0 && html`<div class="empty"><div class="big">🔔</div><p>Nothing yet. You'll hear about new games, the draw, and anything your host changes.</p></div>`}
@@ -80,6 +99,7 @@ export function Me() {
       <a class="btn ghost small" href="#/me/edit">Edit name & photo</a>
     </div>
     <${PushCard} />
+    <${SoundCard} />
     <div class="card stack">
       <div class="section-label">Your groups</div>
       <div class="list">

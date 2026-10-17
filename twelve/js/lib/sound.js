@@ -117,16 +117,8 @@ const N = { G4: 392, A4: 440, C5: 523.25, D5: 587.33, E5: 659.25, G5: 783.99, A5
 // ---------- The sounds ----------
 
 const SOUNDS = {
-  // Advent door: a sleigh-bell shake, then "jingle bells" on chimes.
+  // Advent door: the opening of "We Wish You a Merry Christmas" on a music box.
   door(c, out) {
-    jingle(c, out, 0, 16, 0.45);
-    [[N.E5, 0.35], [N.E5, 0.5], [N.E5, 0.65]].forEach(([f, at]) => bell(c, out, f * 2, at, 0.28, 0.9));
-    jingle(c, out, 0.8, 8, 0.3, 0.12);
-  },
-  // --- Door sound options to compare (the one picked becomes "door") ---
-
-  // Music box: the opening of "We Wish You a Merry Christmas".
-  door_musicbox(c, out) {
     const box = (f, at) => {
       tone(c, out, { freq: f, at, dur: 0.9, vol: 0.24 });
       tone(c, out, { freq: f * 4, at, dur: 0.25, vol: 0.06 });
@@ -136,49 +128,6 @@ const SOUNDS = {
     const D5 = 587.33, G5 = 783.99, A5 = 880, Fs5 = 739.99, E5 = 659.25;
     [[D5, 0], [G5, 2], [G5, 4], [A5, 5], [G5, 6], [Fs5, 7], [E5, 8], [E5, 10]].forEach(([f, i]) => box(f, i * e));
   },
-  // Harp: a quick upward sweep that lands on a chime.
-  door_harp(c, out) {
-    [N.C5, N.D5, N.E5, N.G5, N.A5, N.C6, 1174.66, N.E6, N.G6, 1760, N.C7].forEach((f, i) => {
-      tone(c, out, { freq: f, at: i * 0.04, dur: 0.7, vol: 0.2, type: "triangle", attack: 0.003 });
-    });
-    [N.C6, N.E6, N.G6].forEach((f) => bell(c, out, f, 0.48, 0.17, 1.4));
-  },
-  // Magic: a whoosh that rises into twinkles.
-  door_magic(c, out) {
-    const t = c.currentTime;
-    if (!noiseBuffer) noise(c, out, { vol: 0.0002, dur: 0.01 });
-    const src = c.createBufferSource();
-    src.buffer = noiseBuffer;
-    const f = c.createBiquadFilter();
-    f.type = "bandpass";
-    f.Q.value = 2;
-    f.frequency.setValueAtTime(600, t);
-    f.frequency.exponentialRampToValueAtTime(7000, t + 0.55);
-    const g = c.createGain();
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(0.35, t + 0.4);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
-    src.connect(f).connect(g).connect(out);
-    src.start(t);
-    src.stop(t + 0.75);
-    const twinkle = [N.E6, N.G6, 1760, N.C7, 2349.3, 2637];
-    for (let i = 0; i < 9; i++) bell(c, out, twinkle[Math.floor(Math.random() * twinkle.length)], 0.45 + i * 0.06, 0.09, 0.5);
-    [N.C6, N.E6, N.G6].forEach((fr) => bell(c, out, fr, 0.95, 0.12, 1.2));
-  },
-  // Creaky door, then one warm chime.
-  door_creak(c, out) {
-    // A creak is lots of tiny clicks (wood sticking and slipping), speeding up then slowing.
-    let at = 0;
-    while (at < 0.75) {
-      const p = at / 0.75;
-      const gap = 0.012 + 0.022 * Math.abs(Math.sin(p * Math.PI * 1.5));
-      noise(c, out, { at, dur: 0.012, vol: 0.32, filter: "bandpass", freq: 900 + 700 * Math.sin(p * Math.PI), q: 6 });
-      at += gap;
-    }
-    bell(c, out, N.G5, 0.85, 0.3, 1.6);
-    bell(c, out, N.C6 * 2, 0.85, 0.08, 1.0);
-  },
-
   // Locked door: knock, knock.
   knock(c, out) {
     [0, 0.17].forEach((at) => {

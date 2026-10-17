@@ -1,6 +1,7 @@
 // One day of the 12 Days of Games: locked, open (play it), played (see who
 // else has), or closed (answers, photos, and that day's results).
-import { html } from "../vendor/preact-htm.mjs";
+import { html, useEffect } from "../vendor/preact-htm.mjs";
+import { play } from "../lib/sound.js";
 import { rpc } from "../lib/db.js";
 import { useApp, useGroup } from "../lib/state.js";
 import { Avatar, ErrorNote, Spinner, useAsync, Countdown, BackLink, timeLeft, useNow, formatTime } from "../lib/ui.js";
@@ -31,6 +32,23 @@ function WhoPlayed({ day }) {
     </div>
     <p class="small muted">Scores stay secret until the day closes.</p>
   </section>`;
+}
+
+// The first time you see a closed day's results on this device: a ding if
+// you did well, a friendly bonk if not. Would You Rather has no score to judge.
+function ResultChime({ data, groupId, day }) {
+  useEffect(() => {
+    const score = data.play?.score;
+    if (score == null || data.format === "wyr") return;
+    const key = `twelve.result.${groupId}.${day}`;
+    try {
+      if (localStorage.getItem(key)) return;
+      localStorage.setItem(key, "1");
+    } catch { return; }
+    if (data.format === "photo") { if (score === 100) play("right"); return; }
+    play(score >= 50 ? "right" : "wrong");
+  }, []);
+  return null;
 }
 
 function ScoreCard({ data }) {
@@ -109,6 +127,7 @@ export function DayScreen({ day }) {
       ${played && html`<${WhoPlayed} day=${day} />`}`;
   } else {
     body = html`
+      ${played && html`<${ResultChime} data=${data} groupId=${g.groupId} day=${day} />`}
       ${played ? html`<${ScoreCard} data=${data} />` : html`<div class="note">This day has closed${data.play ? "" : " — you didn't play it"}. Here's how it went.</div>`}
       ${day === 12 && !g.schedule?.champion_revealed_at && html`<div class="card"><p>👑 Final standings stay under wraps until the host reveals the champion.</p></div>`}
       ${QUIZ.includes(f) && html`<${QuizReview} ...${props} />`}

@@ -3,6 +3,7 @@ import { html, useState, useEffect, useRef, useCallback } from "../vendor/preact
 import { sb, q, currentSeason } from "../lib/db.js";
 import { useApp, useGroup } from "../lib/state.js";
 import { Avatar, ErrorNote, Spinner, useAction, formatTime } from "../lib/ui.js";
+import { play } from "../lib/sound.js";
 
 const PAGE = 100;
 // Must match the list in twelve_chat_reactions' check constraint.
@@ -108,6 +109,7 @@ export function Chat() {
     setPicker(null);
     const current = reactions[messageId]?.[user.id];
     const next = current === emoji ? null : emoji;
+    if (next) play("pop");
     setReactions((all) => {
       const forMsg = { ...(all[messageId] || {}) };
       if (next) forMsg[user.id] = next;

@@ -4,6 +4,7 @@
 import { html, useState } from "../vendor/preact-htm.mjs";
 import { toast } from "./ui.js";
 import { formatEmoji } from "./formats.js";
+import { play } from "./sound.js";
 
 // Whether you've already opened today's door is remembered on this device only.
 const seenKey = (groupId, day) => `twelve.door.${groupId}.${day}`;
@@ -28,12 +29,14 @@ function Door({ groupId, d, now, onOpen }) {
 
   const tap = () => {
     if (state === "locked") {
+      play("knock");
       setShaking(true);
       setTimeout(() => setShaking(false), 450);
       toast(`Day ${d.day} opens ${opensAt(d.unlocks_at)}`);
       return;
     }
     if (ready) {
+      play("door");
       markSeen(groupId, d.day);
       setSeen(true);
       setTimeout(() => onOpen(d.day), reducedMotion() ? 0 : 700);
