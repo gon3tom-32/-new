@@ -488,6 +488,7 @@ p { margin: 0; }
 .answer-card + .answer-card { border-top: 1px solid var(--line); }
 .answer-card .q { font-size: 0.82rem; font-weight: 700; color: var(--ink-soft); }
 .answer-card .a { font-size: 1.05rem; margin-top: 4px; white-space: pre-wrap; }
+.idea { padding: 12px 14px; border-radius: 14px; background: color-mix(in srgb, var(--gold) 14%, var(--surface)); border: 1px solid color-mix(in srgb, var(--gold) 40%, var(--line)); }
 .check-row { display: flex; gap: 12px; align-items: center; cursor: pointer; padding: 6px 0; }
 .check-row input { width: 24px; height: 24px; accent-color: var(--green); }
 
