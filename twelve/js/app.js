@@ -3,6 +3,7 @@ import { sb, storage } from "./lib/db.js";
 import { AppContext, GroupContext, useApp, useRoute, useAppState, useGroupState, go } from "./lib/state.js";
 import { Spinner, ErrorNote, Toaster, Sheet, Avatar, Icons } from "./lib/ui.js";
 import { registerServiceWorker } from "./lib/push.js";
+import { unlockAudio } from "./lib/sound.js";
 import { Welcome, CodeEntry, SignIn, ProfileForm, CreateGroup, NoGroup, continueOnboarding } from "./screens/onboarding.js";
 import { Home } from "./screens/home.js";
 import { Leaderboard } from "./screens/leaderboard.js";
@@ -189,5 +190,6 @@ function App() {
   <//>`;
 }
 
+unlockAudio();
 render(html`<${App} />`, document.getElementById("app"));
 registerServiceWorker();
