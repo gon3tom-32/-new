@@ -41,6 +41,7 @@ export function Gifts() {
     ${!drawn && html`<${JoinCard} />`}
     <${Roster} />
     ${!drawn && g.isHost && html`<${HostDraw} />`}
+    ${drawn && g.isHost && html`<${HostReset} />`}
   </main>`;
 }
 
@@ -184,7 +185,7 @@ function HostDraw() {
     <p class="small muted">Draw when everyone's in — there's no automatic deadline. Once names are drawn, the list is locked for this year.</p>
     ${confirming
       ? html`<div class="note stack">
-          <p><b>Draw names for ${people.length} people?</b> This can't be undone.</p>
+          <p><b>Draw names for ${people.length} people?</b> Everyone gets notified right away.</p>
           <div class="row">
             <button class="btn green grow" disabled=${draw.busy} onClick=${draw.run}>${draw.busy ? "Drawing…" : "Yes, draw!"}</button>
             <button class="btn ghost" onClick=${() => setConfirming(false)}>Not yet</button>
@@ -193,6 +194,32 @@ function HostDraw() {
       : html`<button class="btn green block" disabled=${people.length < 2} onClick=${() => setConfirming(true)}>🎲 Draw names</button>`}
     ${people.length < 2 && html`<p class="small muted center">At least two people need to be in the exchange.</p>`}
     <${ErrorNote} error=${draw.error} />
+  </section>`;
+}
+
+function HostReset() {
+  const g = useGroup();
+  const [confirming, setConfirming] = useState(false);
+  const reset = useAction(async () => {
+    await rpc("twelve_reset_draw", { p_group: g.groupId });
+    setConfirming(false);
+    await g.reload();
+    toast("Secret Santa reset. You can draw names again.");
+  });
+  return html`<section class="card stack">
+    <div class="section-label">Host · Reset Secret Santa</div>
+    <p class="small muted">Made a mistake, or someone new needs to join? Resetting undoes the draw so you can draw names again.</p>
+    ${confirming
+      ? html`<div class="note stack">
+          <p><b>Reset the Secret Santa?</b> This deletes everyone's match, all anonymous messages, and the "gift bought" checkmarks. It can't be undone.</p>
+          <p class="small">Kept: who's in the exchange, couples, budget, date, and everyone's questionnaire answers.</p>
+          <div class="row">
+            <button class="btn grow" disabled=${reset.busy} onClick=${reset.run}>${reset.busy ? "Resetting…" : "Yes, reset"}</button>
+            <button class="btn ghost" onClick=${() => setConfirming(false)}>Cancel</button>
+          </div>
+        </div>`
+      : html`<button class="btn ghost block" onClick=${() => setConfirming(true)}>🔄 Reset Secret Santa</button>`}
+    <${ErrorNote} error=${reset.error} />
   </section>`;
 }
 

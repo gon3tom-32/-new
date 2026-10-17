@@ -97,6 +97,7 @@ What to know:
 - The nine-question questionnaire is one question at a time with a progress bar. Only your giver can read your answers.
 - **Anonymous Q&A:** givers message their recipient from the match screen. Recipients reply under **Your Secret Santa**. The database never shows a recipient who their giver is.
 - **Gift bought** is a private checkbox; nobody else sees it.
+- **Reset Secret Santa:** after the draw, the host can undo it and draw again. This deletes every match, the anonymous messages, and the "gift bought" checkmarks, and tells everyone in the exchange. It keeps who's in the exchange, couples, budget, date, and questionnaire answers.
 
 ### 12 Days of Games
 
@@ -123,7 +124,7 @@ What to know:
 - **Lyric Fill-in-the-Blank** uses traditional, public-domain carols, so there are no licensing issues with modern songs.
 - **Would You Rather** gives full points for playing, since there are no wrong answers.
 - Quiz-style games are multiple choice, so scoring is fair and automatic.
-- After names are drawn, the exchange roster is locked for the year.
+- After names are drawn, the exchange roster is locked for the year, unless the host resets the draw.
 
 ## Editing the game content
 
