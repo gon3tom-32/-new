@@ -1,12 +1,20 @@
 /* Twelve — classic Christmas colors, turned up. */
 
 :root {
+  /* Light palette (the default). The <html> element carries data-theme="light"
+     or "dark"; a script in index.html sets it before the first paint. */
   --red: #e8173a;
   --red-deep: #b80d2b;
+  --red-text: #e8173a;      /* red used as text on the page */
+  --red-ink: #b80d2b;       /* text on a pale red tint */
   --green: #00a65a;
   --green-deep: #00703d;
+  --green-ink: #00703d;     /* text on a pale green tint */
   --gold: #ffb703;
+  --gold-deep: #c98a00;
   --gold-soft: #ffe08a;
+  --gold-ink: #6b4700;      /* text on a pale gold tint */
+  --on-gold: #3a2300;       /* text on solid gold */
   --pine: #0b3d2a;
 
   --bg: #fff6ea;
@@ -16,6 +24,7 @@
   --ink-soft: #6d5560;
   --line: #f0dcc8;
   --shadow: 0 2px 0 rgba(35, 18, 26, 0.08), 0 10px 24px -12px rgba(35, 18, 26, 0.25);
+  --scrim: var(--scrim);
   --on-red: #ffffff;
 
   --radius: 20px;
@@ -26,18 +35,32 @@
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0d1f17;
-    --surface: #15302a;
-    --surface-2: #1c3b33;
-    --ink: #fff4e6;
-    --ink-soft: #b9c9bf;
-    --line: #27483f;
-    --shadow: 0 2px 0 rgba(0, 0, 0, 0.25), 0 12px 28px -14px rgba(0, 0, 0, 0.6);
-    --red: #ff3355;
-    color-scheme: dark;
-  }
+/* Dark palette: warm near-black, with the red, green, and gold kept punchy.
+   Keep the page background in sync with THEME_COLORS in index.html. */
+:root[data-theme="dark"] {
+  --red: #e6173f;
+  --red-deep: #a50f2c;
+  --red-text: #ff6b81;
+  --red-ink: #ffb3c0;
+  --green: #00a65a;
+  --green-deep: #00703d;
+  --green-ink: #4fe39a;
+  --gold: #ffb703;
+  --gold-deep: #b97f00;
+  --gold-soft: #ffe08a;
+  --gold-ink: #ffd76a;
+  --on-gold: #3a2300;
+  --pine: #0f4a33;
+
+  --bg: #16100e;
+  --surface: #221916;
+  --surface-2: #2c211d;
+  --ink: #fbefe6;
+  --ink-soft: #c4ada3;
+  --line: #3a2c26;
+  --shadow: 0 2px 0 rgba(0, 0, 0, 0.35), 0 12px 28px -14px rgba(0, 0, 0, 0.7);
+  --scrim: rgba(0, 0, 0, 0.6);
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -94,7 +117,7 @@ p { margin: 0; }
 /* The Twelve logo, top left: always goes back to the group's Home. */
 .brand { display: flex; align-items: center; gap: 8px; text-decoration: none; flex: none; margin-right: auto; }
 .brand img { width: 34px; height: 34px; border-radius: 9px; box-shadow: 0 2px 6px -2px rgba(232, 23, 58, 0.6); }
-.brand-word { font-family: var(--display); font-weight: 800; font-size: 1.55rem; letter-spacing: -0.03em; color: var(--red); line-height: 1; }
+.brand-word { font-family: var(--display); font-weight: 800; font-size: 1.55rem; letter-spacing: -0.03em; color: var(--red-text); line-height: 1; }
 .brand-word .dot { color: var(--gold); }
 /* The group name: secondary, and opens the group switcher. */
 .group-chip {
@@ -138,7 +161,7 @@ p { margin: 0; }
   text-decoration: none; color: var(--ink-soft); font-size: 0.72rem; font-weight: 700;
 }
 .tab svg { width: 24px; height: 24px; }
-.tab.active { color: var(--red); }
+.tab.active { color: var(--red-text); }
 .tab.active svg { transform: translateY(-1px) scale(1.08); }
 
 /* ---------- Cards ---------- */
@@ -164,7 +187,7 @@ p { margin: 0; }
 }
 .hero.green { background: var(--green); box-shadow: 0 16px 30px -18px rgba(0, 166, 90, 0.8); }
 .hero.pine { background: var(--pine); box-shadow: 0 16px 30px -18px rgba(11, 61, 42, 0.8); }
-.hero.gold { background: var(--gold); color: #3a2300; box-shadow: 0 16px 30px -18px rgba(255, 183, 3, 0.9); }
+.hero.gold { background: var(--gold); color: var(--on-gold); box-shadow: 0 16px 30px -18px rgba(255, 183, 3, 0.9); }
 .hero .kicker { font-family: var(--display); font-weight: 800; font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.85; }
 .hero h2 { font-size: 1.8rem; margin: 6px 0 6px; }
 .hero .day-num {
@@ -198,14 +221,14 @@ p { margin: 0; }
 .btn.block { width: 100%; }
 .btn.green { background: var(--green); box-shadow: 0 4px 0 var(--green-deep); }
 .btn.green:active { box-shadow: 0 1px 0 var(--green-deep); }
-.btn.gold { background: var(--gold); color: #3a2300; box-shadow: 0 4px 0 #c98a00; }
-.btn.gold:active { box-shadow: 0 1px 0 #c98a00; }
+.btn.gold { background: var(--gold); color: var(--on-gold); box-shadow: 0 4px 0 var(--gold-deep); }
+.btn.gold:active { box-shadow: 0 1px 0 var(--gold-deep); }
 .btn.white { background: #fff; color: var(--red); box-shadow: 0 4px 0 rgba(0, 0, 0, 0.18); }
 .btn.ghost { background: transparent; color: var(--ink); box-shadow: none; border: 2px solid var(--line); }
 .btn.ghost:active { transform: none; background: var(--surface-2); }
 .btn.small { min-height: 40px; padding: 0 16px; font-size: 0.92rem; }
 .btn[disabled] { opacity: 0.5; cursor: not-allowed; transform: none; }
-.link-btn { background: none; border: 0; padding: 4px; cursor: pointer; color: var(--red); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.link-btn { background: none; border: 0; padding: 4px; cursor: pointer; color: var(--red-text); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 
 /* ---------- Forms ---------- */
 .field { display: flex; flex-direction: column; gap: 6px; }
@@ -263,14 +286,9 @@ p { margin: 0; }
   padding: 3px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 700;
   background: var(--surface-2); color: var(--ink-soft); white-space: nowrap;
 }
-.pill.green { background: color-mix(in srgb, var(--green) 18%, var(--surface)); color: var(--green-deep); }
-.pill.red { background: color-mix(in srgb, var(--red) 15%, var(--surface)); color: var(--red-deep); }
-.pill.gold { background: color-mix(in srgb, var(--gold) 35%, var(--surface)); color: #6b4700; }
-@media (prefers-color-scheme: dark) {
-  .pill.green { color: #7ff0b6; }
-  .pill.red { color: #ffb3c0; }
-  .pill.gold { color: var(--gold-soft); }
-}
+.pill.green { background: color-mix(in srgb, var(--green) 18%, var(--surface)); color: var(--green-ink); }
+.pill.red { background: color-mix(in srgb, var(--red) 15%, var(--surface)); color: var(--red-ink); }
+.pill.gold { background: color-mix(in srgb, var(--gold) 35%, var(--surface)); color: var(--gold-ink); }
 
 /* ---------- Countdown ---------- */
 .countdown { display: flex; gap: 8px; }
@@ -289,6 +307,14 @@ p { margin: 0; }
   font-weight: 700; color: var(--ink-soft);
 }
 .segmented button.active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+
+/* A plain row in a bottom sheet, set apart from the buttons above it. */
+.sheet-row {
+  display: flex; align-items: center; gap: 12px; margin-top: 6px; padding: 16px 4px 4px;
+  border-top: 1px solid var(--line); color: var(--ink); text-decoration: none; font-weight: 700;
+}
+.sheet-row svg { width: 22px; height: 22px; color: var(--ink-soft); }
+.sheet-row .chev { color: var(--ink-soft); font-size: 1.4rem; line-height: 1; }
 
 /* ---------- Progress ---------- */
 .progress { height: 10px; border-radius: 5px; background: var(--surface-2); overflow: hidden; }
@@ -391,10 +417,9 @@ p { margin: 0; }
 .door-day { font-family: var(--display); font-weight: 800; font-size: 0.9rem; }
 .door-status { font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 999px; }
 .door-status.play { background: var(--red); color: #fff; }
-.door-status.done { background: color-mix(in srgb, var(--green) 18%, var(--surface)); color: var(--green-deep); }
+.door-status.done { background: color-mix(in srgb, var(--green) 18%, var(--surface)); color: var(--green-ink); }
 .door-status.missed { color: var(--ink-soft); }
 .door.faded .door-inside { opacity: 0.6; }
-@media (prefers-color-scheme: dark) { .door-status.done { color: #7ff0b6; } }
 .door-front {
   position: absolute; inset: 0; border-radius: 16px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
@@ -404,7 +429,7 @@ p { margin: 0; }
   box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.14), inset 0 0 0 7px rgba(0, 0, 0, 0.08), 0 4px 0 var(--red-deep);
 }
 .door.green .door-front { background: var(--green); box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.14), inset 0 0 0 7px rgba(0, 0, 0, 0.08), 0 4px 0 var(--green-deep); }
-.door.gold .door-front { background: var(--gold); color: #3a2300; box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.3), inset 0 0 0 7px rgba(0, 0, 0, 0.06), 0 4px 0 #c98a00; }
+.door.gold .door-front { background: var(--gold); color: var(--on-gold); box-shadow: inset 0 0 0 4px rgba(255, 255, 255, 0.3), inset 0 0 0 7px rgba(0, 0, 0, 0.06), 0 4px 0 var(--gold-deep); }
 .door-num { font-family: var(--display); font-weight: 800; font-size: 2.6rem; line-height: 1; text-shadow: 0 2px 0 rgba(0, 0, 0, 0.15); }
 .door-date { font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.9; }
 .door-knob {
@@ -453,8 +478,8 @@ p { margin: 0; }
   display: grid; place-items: center; text-align: center; cursor: pointer; overflow: hidden; hyphens: auto;
 }
 .bingo-cell.marked { background: var(--red); color: #fff; border-color: var(--red); }
-.bingo-cell.free { background: var(--gold); color: #3a2300; border-color: var(--gold); font-family: var(--display); font-size: 0.9rem; cursor: default; }
-.bingo-head { display: grid; grid-template-columns: repeat(5, 1fr); text-align: center; font-family: var(--display); font-weight: 800; font-size: 1.4rem; color: var(--red); }
+.bingo-cell.free { background: var(--gold); color: var(--on-gold); border-color: var(--gold); font-family: var(--display); font-size: 0.9rem; cursor: default; }
+.bingo-head { display: grid; grid-template-columns: repeat(5, 1fr); text-align: center; font-family: var(--display); font-weight: 800; font-size: 1.4rem; color: var(--red-text); }
 
 .timer-chip {
   display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px;
@@ -511,7 +536,7 @@ p { margin: 0; }
   width: 100%; border-radius: 14px 14px 0 0; display: grid; place-items: center;
   font-family: var(--display); font-weight: 800; font-size: 1.6rem; color: #fff;
 }
-.podium-spot.p1 .podium-block { height: 92px; background: var(--gold); color: #3a2300; }
+.podium-spot.p1 .podium-block { height: 92px; background: var(--gold); color: var(--on-gold); }
 .podium-spot.p2 .podium-block { height: 66px; background: var(--red); }
 .podium-spot.p3 .podium-block { height: 48px; background: var(--green); }
 
@@ -569,7 +594,7 @@ p { margin: 0; }
 }
 .reaction span { font-size: 0.78rem; font-weight: 700; color: var(--ink-soft); }
 .reaction.mine { border-color: var(--red); background: color-mix(in srgb, var(--red) 10%, var(--surface)); }
-.reaction.mine span { color: var(--red); }
+.reaction.mine span { color: var(--red-text); }
 .composer {
   position: fixed; left: 0; right: 0; z-index: 25;
   bottom: calc(var(--tabbar) + env(safe-area-inset-bottom));
@@ -618,7 +643,7 @@ p { margin: 0; }
 /* ---------- Order editor ---------- */
 .order-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; }
 .order-row + .order-row { border-top: 1px solid var(--line); }
-.order-row .n { width: 30px; font-family: var(--display); font-weight: 800; color: var(--red); }
+.order-row .n { width: 30px; font-family: var(--display); font-weight: 800; color: var(--red-text); }
 .order-row .mini { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; }
 .order-row .mini[disabled] { opacity: 0.3; cursor: default; }
 

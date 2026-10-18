@@ -5,7 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Twelve</title>
   <meta name="description" content="Gift exchange and 12 Days of Games for your family, friends, or team.">
-  <meta name="theme-color" content="#E8173A">
+  <meta name="theme-color" content="#fff6ea">
+  <script>
+    // Light or dark mode, applied before the first paint so dark mode never
+    // flashes light. The choice ("system", "light" or "dark") is saved per
+    // device; "system" follows the phone's setting and updates live.
+    // js/lib/theme.js changes it; keep these colors in sync with --bg in css/app.css.
+    (function () {
+      var THEME_COLORS = { light: "#fff6ea", dark: "#16100e" };
+      var media = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+      function choice() {
+        try {
+          var c = localStorage.getItem("twelve.theme");
+          return c === "light" || c === "dark" ? c : "system";
+        } catch (e) { return "system"; }
+      }
+      function apply() {
+        var c = choice();
+        var theme = c === "system" ? (media && media.matches ? "dark" : "light") : c;
+        document.documentElement.setAttribute("data-theme", theme);
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute("content", THEME_COLORS[theme]);
+      }
+      apply();
+      if (media) {
+        if (media.addEventListener) media.addEventListener("change", apply);
+        else if (media.addListener) media.addListener(apply);
+      }
+      window.twelveApplyTheme = apply;
+    })();
+  </script>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -20,7 +49,7 @@
     // The app's version. Bump it whenever anything in twelve/ changes.
     // Every app file loads with ?v=<version>, so after an update a phone can
     // never mix new files with old cached ones. sw.js gets it from here too.
-    window.TWELVE_VERSION = "14";
+    window.TWELVE_VERSION = "15";
 
     (function (v) {
       // Every JavaScript module the app imports (paths inside js/). A file
@@ -41,6 +70,7 @@
         "lib/push.js",
         "lib/questionnaire.js",
         "lib/sound.js",
+        "lib/theme.js",
         "lib/state.js",
         "lib/ui.js",
         "screens/account.js",
@@ -49,6 +79,7 @@
         "screens/home.js",
         "screens/leaderboard.js",
         "screens/onboarding.js",
+        "screens/preferences.js",
         "screens/settings.js",
         "vendor/preact-htm.mjs"
       ];
