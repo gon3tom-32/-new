@@ -11,6 +11,7 @@ import { Gifts, Questionnaire, AskThread, SantaThread } from "./screens/gifts.js
 import { Chat } from "./screens/chat.js";
 import { Settings } from "./screens/settings.js";
 import { Inbox, Me } from "./screens/account.js";
+import { AppSettings } from "./screens/preferences.js";
 import { DayScreen } from "./games/day.js";
 
 function useUnreadCount(userId) {
@@ -61,6 +62,9 @@ function GroupSwitcher({ open, onClose, current }) {
       </div>
       <a class="btn ghost block" href="#/code" onClick=${onClose}>Join another group</a>
       <button class="btn ghost block" onClick=${() => { onClose(); storage.set("pendingCreate", true); go("/create"); }}>Start a new group</button>
+      <a class="sheet-row" href="#/settings" onClick=${onClose}>
+        ${Icons.gear()}<span class="grow">Settings</span><span class="chev" aria-hidden="true">›</span>
+      </a>
     </div>
   <//>`;
 }
@@ -153,6 +157,7 @@ function Router() {
     case "create": return html`<${CreateGroup} />`;
     case "join": return html`<${NoGroup} />`;
     case "inbox": return html`<${Inbox} />`;
+    case "settings": return html`<${AppSettings} />`;
     case "me": return rest[0] === "edit" ? html`<${ProfileForm} editing />` : html`<${Me} />`;
     case "g": return html`<${GroupShell} groupId=${rest[0]} rest=${rest.slice(1)} key=${rest[0]} />`;
     default: return html`<${Landing} />`;
