@@ -35,7 +35,7 @@ Both are safe to run again. Run them again whenever they change.
 ### 2. Sign-in (required)
 
 - **Authentication → URL Configuration → Redirect URLs:** add `https://gon3tom-32.github.io/-new/twelve/`.
-- **Authentication → Emails:** sign-in is by 6-digit code (the email's link still works as a backup on the same device). Editing the email templates needs custom SMTP (below). In both **Magic link or OTP** and **Confirm sign up**, set:
+- **Authentication → Emails:** sign-in is by emailed code (the email's link still works as a backup on the same device). Editing the email templates needs custom SMTP (below). In both **Magic link or OTP** and **Confirm sign up**, set:
   - Subject: `Your Twelve code: {{ .Token }}`
   - Body:
 
@@ -47,7 +47,7 @@ Both are safe to run again. Run them again whenever they change.
     ```
 
   Putting the code in the subject means it shows in the phone's notification, so people often don't need to open the email.
-- **Authentication → Providers → Email:** keep **Email OTP Length** at 6. The app signs in automatically when the sixth digit is typed.
+- **Authentication → Providers → Email:** set **Email OTP Length** to 6 (shorter codes are easier to type). The app accepts 6- to 8-digit codes either way, and signs in automatically once the whole code is in.
 - Supabase's built-in email only sends a few messages an hour. Before a real group signs up, set up your own email provider under **Authentication → Emails → SMTP Settings**.
 
 ### 3. Reminders (recommended)
