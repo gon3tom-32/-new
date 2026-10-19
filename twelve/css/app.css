@@ -245,6 +245,7 @@ p { margin: 0; }
   text-align: center; text-transform: uppercase; letter-spacing: 0.3em;
   font-family: var(--display); font-weight: 800; font-size: 1.8rem;
 }
+.input.code::placeholder { letter-spacing: normal; text-transform: none; font-weight: 500; font-size: 1.1rem; }
 .toggle-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; cursor: pointer; }
 .toggle-row + .toggle-row { border-top: 1px solid var(--line); }
 .switch { position: relative; width: 52px; height: 32px; flex: none; }

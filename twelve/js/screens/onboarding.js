@@ -171,9 +171,19 @@ export function CodeEntry({ code: initial = "" }) {
   <//>`;
 }
 
-// ---------- Sign in (email magic link + 6-digit code) ----------
+// ---------- Sign in (emailed code, plus the email's magic link) ----------
 
 const RESEND_WAIT = 60; // seconds; Supabase allows one email per minute per address
+
+// Supabase codes are 6 to 8 digits, depending on the project's "Email OTP
+// Length" setting. Once a code works, its length is remembered so the next
+// sign-in can submit the moment the last digit is typed.
+const MIN_CODE = 6;
+const MAX_CODE = 8;
+function knownCodeLength() {
+  const n = Number(storage.get("codeLength"));
+  return n >= MIN_CODE && n <= MAX_CODE ? n : null;
+}
 
 function signInError(error) {
   const message = error?.message || "";
@@ -227,13 +237,15 @@ export function SignIn() {
   });
 
   const verify = useAction(async (code) => {
+    clearTimeout(autoSubmit.current);
     const { error } = await sb.auth.verifyOtp({ email: email.trim().toLowerCase(), token: code, type: "email" });
     if (error) {
-      setToken("");
       // Supabase gives the same answer for a mistyped code and an expired one.
       throw new Error("That code didn't work. Check the numbers, or tap Resend code if it's more than an hour old.");
     }
+    storage.set("codeLength", code.length);
   });
+  const autoSubmit = useRef(null);
 
   const changeEmail = () => {
     storage.set("signinPending", null);
@@ -244,21 +256,28 @@ export function SignIn() {
   if (sentAt) {
     const wait = Math.max(0, RESEND_WAIT - Math.floor((now - sentAt) / 1000));
     const onCode = (value) => {
-      const digits = value.replace(/\D/g, "").slice(0, 10);
+      const digits = value.replace(/\D/g, "").slice(0, MAX_CODE);
+      const pasted = digits.length - token.length > 1;
       setToken(digits);
-      // Codes are 6 digits: sign in as soon as the last one is typed or pasted.
-      if (digits.length === 6 && !verify.busy) verify.run(digits);
+      clearTimeout(autoSubmit.current);
+      if (verify.busy || digits.length < MIN_CODE) return;
+      // Sign in as soon as the whole code is in. If we don't know how long
+      // this project's codes are, a pasted code or 8 digits is complete;
+      // a typed 6 or 7 digits waits a moment in case more are coming.
+      const known = knownCodeLength();
+      if (digits.length === MAX_CODE || digits.length === known || (pasted && !known)) verify.run(digits);
+      else if (!known) autoSubmit.current = setTimeout(() => verify.run(digits), 1500);
     };
-    return html`<${PanelPage} title="Enter your code 📬" subtitle=${`We emailed a 6-digit code to ${email}.`}>
-      <form class="stack-lg" onSubmit=${(e) => { e.preventDefault(); if (token.length >= 6) verify.run(token); }}>
+    return html`<${PanelPage} title="Enter your code 📬" subtitle=${`We emailed a sign-in code to ${email}.`}>
+      <form class="stack-lg" onSubmit=${(e) => { e.preventDefault(); if (token.length >= MIN_CODE) verify.run(token); }}>
         <div class="field">
-          <label for="otp" class="sr-only">6-digit code</label>
+          <label for="otp" class="sr-only">Code from the email</label>
           <input id="otp" class="input code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*"
-            placeholder="••••••" autofocus value=${token} disabled=${verify.busy}
-            onInput=${(e) => onCode(e.currentTarget.value)} aria-label="6-digit code from the email" />
+            placeholder="Enter code" autofocus value=${token} disabled=${verify.busy} maxlength="12"
+            onInput=${(e) => onCode(e.currentTarget.value)} aria-label="Code from the email" />
         </div>
         <${ErrorNote} error=${verify.error || send.error} />
-        <button class="btn block" disabled=${token.length < 6 || verify.busy}>${verify.busy ? "Signing in…" : "Sign in"}</button>
+        <button class="btn block" disabled=${token.length < MIN_CODE || verify.busy}>${verify.busy ? "Signing in…" : "Sign in"}</button>
         <div class="row" style="justify-content:center;gap:16px">
           <button type="button" class="link-btn" disabled=${wait > 0 || send.busy} onClick=${() => send.run()}
             style=${wait > 0 ? "color:var(--ink-soft);text-decoration:none" : ""}>
@@ -275,7 +294,7 @@ export function SignIn() {
 
   const joining = storage.get("pendingCode") || storage.get("pendingCreate");
   return html`<${PanelPage} back=${joining ? "#/code" : "#/welcome"} title="Sign in with your email"
-    subtitle="No passwords. We'll email you a 6-digit code.">
+    subtitle="No passwords. We'll email you a sign-in code.">
     <form class="stack-lg" onSubmit=${(e) => { e.preventDefault(); send.run(); }}>
       <div class="field">
         <label for="email">Email</label>
